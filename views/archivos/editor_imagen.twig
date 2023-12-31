@@ -1,0 +1,169 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        #columns {
+            display: grid;
+            grid-template-columns: 1fr;
+            height: 100%;
+            overflow: hidden;
+            column-gap: 20px;
+            padding: 20px;
+        }
+
+        #columns > aside {
+            background: #f3f3f3;
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        .header-archivos{
+            padding: 20px;
+            margin-bottom:10px;
+        }
+
+        #tools {
+            display: grid;
+            grid-template-columns: auto auto auto auto auto;
+            margin: 10px 0px 15px 0px;
+            background: #ccc;
+            padding: 10px;
+            z-index: 200;
+            height: 200px;
+            width: 100%;
+        }
+
+        #canvas {
+            width: 100%;
+            height: auto;
+        }
+       
+        #imgEditor {
+            cursor: crosshair;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript" src="/js/imageeditor.js?{{appVersion}}"></script>
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+            var imageToCanvas = document.getElementById('imageToCanvas');
+            imageToCanvas.style.display = 'none';
+            drawOnImage(imageToCanvas);
+            //console.log('estoy pasandoo')
+        }
+
+        var guardarImagen = (event) => {
+            event.preventDefault();
+            var canvas = document.getElementById("canvas");
+            var imgSrc    = canvas.toDataURL("image/jpg");
+            var nombre = document.getElementById('nombre').value;
+            var orden = document.getElementById('orden').value;
+
+            var base64ImageContent = imgSrc.replace(/^data:image\/(png|jpeg);base64,/, "");
+            var blob = base64ToBlob(base64ImageContent, 'image/jpg');                
+            var formData = new FormData();
+            formData.append('imagen', blob);
+            formData.append('informeID', '{{informeID}}');
+            formData.append('imagenID', '{{imagenID}}');
+            formData.append('orden', orden);
+            formData.append('nombre', nombre);
+
+            $.ajax({
+                url: "{{ baseUrl }}/api/archivos/{{imagenID}}",
+                type: 'POST',
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: formData,
+                success: json => {
+                    
+                    swal({
+                        icon: "success",
+                        text: "IMAGEN ACTUALIZADA EN EL INFORME",
+                        buttons:[false,'Aceptar']
+                    });
+                    cerrarDetalle();
+                },
+                error: swalError
+            });
+        }
+
+        function base64ToBlob(base64, mime){
+            mime = mime || '';
+            var sliceSize = 1024;
+            var byteChars = window.atob(base64);
+            var byteArrays = [];
+
+            for (var offset = 0, len = byteChars.length; offset < len; offset += sliceSize) {
+                var slice = byteChars.slice(offset, offset + sliceSize);
+
+                var byteNumbers = new Array(slice.length);
+                for (var i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+
+                var byteArray = new Uint8Array(byteNumbers);
+
+                byteArrays.push(byteArray);
+            }
+
+            return new Blob(byteArrays, {type: mime});
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    
+{% endblock %}
+
+{% block modalBody %}
+       
+    <div id="tools">
+        <div>
+            <span>Trazo: </span>
+            <input
+                type="range"
+                min="1"
+                max="50"
+                value="25"
+                class="size"
+                id="sizeRange"
+            />
+        </div>
+        <div>
+            <span>Color: </span>
+            <input type="radio" name="colorRadio" value="black" checked />
+            <label for="black">Tachar</label>
+            
+            <input type="radio" name="colorRadio" value="yellow" />
+            <label for="yellow">Resaltar</label>
+        </div>
+        <form id="formImagen">
+            <input type="hidden" class="form-control" id="informeID" name="informeID">
+            <input type="hidden" class="form-control" id="orden" name="orden" value="{{orden}}">    
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" id="nombre" name="nombre" value="{{nombre}}" class="form-control" placeholder="Nombre">
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-success" onclick="guardarImagen(event)">Guardar</button>
+                </div>
+            </div>
+        </form>
+        
+    </div>
+    <div id="imgEditor" class="info" style="overflow:scroll;">
+        <img id="imageToCanvas" src="{{ baseUrl }}/archivos/{{informeID}}/{{imagenID}}{{forceCache}}"/>
+        <canvas id="canvas"></canvas>
+    </div> 
+
+{% endblock %}
+{% block modalFooter %}
+    
+{% endblock %}
+

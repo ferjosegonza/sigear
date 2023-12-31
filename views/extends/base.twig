@@ -1,0 +1,88 @@
+{% extends "extends/html.twig" %}
+{% block htmlBody %}
+    <div id="app" class="app active-view {{appClass}} {% if solapas %}app--with-solapas{% endif %} {% if portada %}app--portada{% endif %}">
+        {% if not sinHeader %}
+            <div class="app-header {% if solapas %}app-header--con-solapas{% endif %}">
+                <div class="app-actions app-actions--left hide_portada">
+                    {% if appBotonera|length > 0 %}
+                        <button class="btn-icon" onclick="openDrawerMenu();"><i class="fas fa-bars"></i></button>
+                    {% endif %}
+                    <a class="btn-icon" onclick="volver();"><i class="fa fa-arrow-left"></i></a>
+                </div>
+                <div class="app-brand">
+                  
+                    <div class="app-logo show_portada">
+                        <!--<img src="{{APP_organismo.logo}}" style="{{APP_organismo.logoEstilo}}">-->
+                    </div>
+                    
+                    <h1 class="app-title">{% if portada and not solapaNombre %}{{appName}}{% else %}{{solapaNombre}}{% endif %}</h1>
+
+                    <div class="app-title-container">
+                        <div id="app-solapas-container" class="app-subtitle {{solapasClass}}">
+                            {% if portada and not solapas %}
+                                {{APP_organismo.descripcion}}
+                            {% else %}
+                                {% for solapa in solapas %}
+                                    {% set solapaId = loop.index %}
+                                    {% if solapa.dropdown %}
+                                        <div class="app__solapa dropdown">
+                                            <button class="btn dropdown-toggle" type="button" id="appSolapaSelect_{{solapaId}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                {{solapa.nombre}}
+                                            </button>
+                                            <div class="dropdown-menu" aria-labelledby="appSolapaSelect_{{solapaId}}">
+                                                {% for option in solapa.options %}
+                                                    <button type="button" class="dropdown-item" onclick="APP.solapaOnClick(this, '{{solapa.onClick}}');" data-parentid="appSolapaSelect_{{solapaId}}"  data-id="{{ option.id }}">{{ option.value }}</button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <a class="app__solapa {% if solapa.activo %}app__solapa--activa{% endif %}" {% if solapa.url %}href="{{solapa.url}}"{% else %}onclick="APP.solapaOnClick(this, '{{solapa.onClick}}');" data-id="{{ solapa.id }}"{% endif %} >{{solapa.nombre}}</a>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="app-actions">
+                    {{userAction | raw}}
+                    {{centralAppsAction | raw}}
+                </div>
+            </div>  
+
+            <div id="app-solapas-container-2" class="app-solapas {{solapasClass}}">
+                {% for solapa in solapas %}
+                    {% set solapaId = loop.index %}
+                    {% if solapa.dropdown %}
+                        <div class="app__solapa dropdown">
+                            <button class="btn dropdown-toggle" type="button" id="appSolapaSelect_{{solapaId}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {{solapa.nombre}}
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="appSolapaSelect2_{{solapaId}}">
+                                {% for option in solapa.options %}
+                                    <button type="button" class="dropdown-item" onclick="APP.solapaOnClick(this, '{{solapa.onClick}}');" data-parentid="appSolapaSelect2_{{solapaId}}"  data-id="{{ option.id }}">{{ option.value }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <a class="app__solapa {% if solapa.activo %}app__solapa--activa{% endif %}" {% if solapa.url %}href="{{solapa.url}}"{% else %}onclick="APP.solapaOnClick(this, '{{solapa.onClick}}');" data-id="{{ solapa.id }}"{% endif %} >{{solapa.nombre}}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="app-body {% if not appBody.withoutPadding %}app-body--with-padding{% endif %} {% if appBody.maxWidth %}app-body--limited{% endif %}" {% if appBody.maxWidth %}style="max-width:{{appBody.maxWidth}}rem;"{% endif %}>
+            {% if mensajesFlash %}
+                {% include 'includes/flash.twig' %}
+            {% endif %}
+            {% block appBody %}
+            {% endblock %}
+        </div>
+
+        <div id="app-drawer-menu" class="app-drawer">
+            {% include 'includes/lista-btn-app.twig' with {apps: appBotonera} %}
+        </div>
+        <div id="app-modals-container"></div>
+        <div class="app-overlay" onclick="closeDrawer();"></div>
+        <div class="app-loading-screen loading"></div>
+    </div>
+{% endblock %}

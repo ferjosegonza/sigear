@@ -1,0 +1,150 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        #error-view{
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 20% 1fr;
+            grid-template-rows: 1fr;
+            align-items: flex-start;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #error-view > div{
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        #error-view > div:first-of-type{
+            background-color: #EFEFEF;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+        }
+        #error-view > div:first-of-type .list-group{
+            /*padding-right: 15px;*/
+            padding: 15px 15px 15px 0px;
+            overflow: auto;
+            width: 100%;
+            height: 100%;
+        }
+        #error-view > div:first-of-type .list-group-item {
+            padding: 10px 30px;
+            font-size: 13px;
+            background: #e4e4e4;
+            margin-bottom: 7px;
+            border-radius: 0 5px 5px 0
+        }
+        #error-view > div:first-of-type > h4 {
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 16px;
+            letter-spacing: 0.2em;
+            margin: 20px 0px;
+            text-align: center;
+            display: none;
+        }
+        #error-view > div:first-of-type .list-group-item:hover {
+            background: #d4d4d4;
+        }
+        #error-view > div:last-of-type > textarea{
+            width: 100%;
+            height: 100%;
+            letter-spacing: 0.04em;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 19px;
+            font-weight: 300;
+            border: 0px;
+        }
+        #error-view > div:last-of-type > #preview{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: initial;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: #FFF;
+            z-index: 10;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.DOM = {
+                errorList: document.getElementById("error-list"),
+                errorText: document.getElementById("error-text"),
+                preview: document.getElementById("preview"),
+            }
+
+            state.errores = null;
+
+            state.getErrorFiles = () => {
+                $.ajax({
+                    url: `{{baseUrl}}/api/errores`,
+                    type: "GET",
+                    success: json => {
+                        state.errores = json.data;
+                        state.listErrorFiles();
+                    },
+                    error: swalError
+                });
+            }
+
+            state.listErrorFiles = () => {
+                if(!state.errores) return;
+
+                html = ``;
+                for(errorName in state.errores){
+                    html += `<li class="list-group-item" onClick="APP.state.seleccionarError('${errorName}')">
+                                ${errorName}
+                            </li>`;
+                }
+
+                state.DOM.errorList.innerHTML = html;
+            }
+
+            state.seleccionarError = nombreError => {
+                if(!state.errores) return;
+
+                state.DOM.preview.style.display = "none";
+
+                state.DOM.errorText.value =  state.errores[nombreError]["TEXTO"]
+            }
+
+            APP.ready(function () {
+                state.getErrorFiles();
+            });
+        }
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="hcdn-layout">
+        <div class="layout__body">
+            <div id="error-view">
+                <div>
+                    <h4>Errores</h4>
+                    <ul class="list-group list-group-flush" id="error-list">
+
+                    </ul>
+                </div>
+                <div>
+                    <div id="preview"></div>
+                    <textarea readonly id="error-text"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

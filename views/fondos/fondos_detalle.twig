@@ -1,0 +1,76 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            const fondo = {{fondo ? (fondo | json_encode | raw) : 'null'}};
+            state.SCHEMA_FONDO = yup.object().shape({
+                nombre: yup.string().required("Debe ingresar un nombre").max(60).label('Nombre'),
+            });
+
+            const guardarFondo = formData => {
+                {% if fondo is empty or APP_permisos["Fondos.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/fondos{% if fondo %}/{{fondo.fondo_id}}{% endif %}`,
+                    type: {% if fondo %}'PUT'{% else %}'POST'{% endif %},
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.querySelector("form").addEventListener('submit', e=>{validarFormularioConYup({event: e, schema: APP.state.SCHEMA_FONDO, onValidate: guardarFondo, onError: console.dir})});
+
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <form id="formfondos" novalidate>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Nombre Fondo</span>
+                    </label>
+                    <input type="text"  class="input input-bordered w-full" name="nombre" autocomplete="off" value="{{fondo.fondo_nombre}}" required>
+                </div>              
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    {% if fondo is empty or APP_permisos["Fondos.Editar"] %}
+    <button class="btn btn-success" form="formfondos" type="submit" title="Guardar Fondo">GUARDAR</button>
+    {% endif %}
+{% endblock %}
+

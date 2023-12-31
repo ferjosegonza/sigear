@@ -1,0 +1,90 @@
+{% extends "extends/modal.twig" %}
+
+{% block style %}
+    <style>
+        .scroll-container {
+            /*max-height: 100%;*/
+            overflow-y: auto;
+            /*border: 1px solid #ccc;
+            padding: 10px;*/
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            const guardarRepo = formData => {
+                const id_repo_editado = document.getElementById('id_repo_editado');
+                {% if APP_permisos["Repositorio.Detalle"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/fondos/repositorioEditar/{{id_repo_editado}}`,
+                    type: 'PUT',
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+        }
+    </script>
+{% endblock %}
+
+{% block modalBody %}
+    {# <div>${item.repositorio_id}</div>,
+    <div>${item.fondo_nombre}</div>,
+    <div>${item.nodo_detalle}</div>,
+    <div>${item.apellido}</div>,
+    <div class="colAsunto">${item.asunto_grilla}</div>,
+    <div>${item.fecha}</div>,
+    <div>${item.seccion_mesa}</div>,
+    <div>${item.legajo}</div>,
+    <div>${item.observacion_archivista}</div>,
+    <div>${item.ocr ? `<a href="#" style="color: green;" onclick="APP.state.showGaleria('${item.repositorio_id}')">VER</a>` : `<span style="color: orange;">PROCESANDO</span>`}</div> #}
+    <div class="scroll-container">
+        {% if registroRepo is defined %}
+            <input type="hidden" id="id_repo_editado" value="{{registroRepo['repositorio_id']}}">
+            <form id="formrepositorio">
+                {% set mitad = registroRepo|length / 2 %}
+                <div class="auto-columns mb-3">
+                    <div>
+                    {% set contador = 0 %}
+                    {% for key, value in registroRepo %}
+                        {% set contador = contador +1 %}
+                        {#<div>{{key}}: {{ value }}</div>#}
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">{{key}}</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="{{key}}" autocomplete="off" value="{{ value }}">
+                        </div>
+                        {% if contador == mitad %}
+                            </div><div>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+
+{% endblock %}
+
+{% block modalFooter %}
+    {# {% if solicitud is empty or APP_permisos["Solicitudes.Editar"] %} #}
+        <button class="btn btn-success" form="formrepositorio" type="submit" title="Guardar Cambios" onclick="guardarRepo()">GUARDAR CAMBIOS</button>
+    {# {% endif %} #}
+{% endblock %}

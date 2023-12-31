@@ -1,0 +1,37 @@
+{% block style %}{% endblock %}
+
+<script>
+    APP.ready(function(){
+        {% if solapaNombre %}
+            APP.setearAppTitle("{{solapaNombre | raw}}");
+        {% endif %}
+
+        {% if solapas %}
+            APP.setearAppSolapas({{solapas | json_encode() | raw}});
+        {% endif %}
+
+        {% if solapasModoEdicion %}
+            APP.setearAppSolapasModoEdicion();
+        {% endif %}
+
+        {% if templateName %}
+            APP.setearTemplateName("{{templateName | raw}}");
+        {% endif %}
+    });
+</script>
+
+<div class="app-modal__container {{modal.class}}" style="{{modal.style}}{% if modal.width %} width: {{modal.width}};{% endif %}">
+    <div class="app-layout {% if not modal.noPadding %}with-padding{% endif %}">
+        <div class="layout__header">
+            {% block modalHeader %}{% endblock %}
+        </div>
+        <div class="layout__body">
+            {% block modalBody %}{% block appBody %}{% endblock %}{% endblock %}
+        </div>
+        <div class="layout__footer">
+            {% block modalFooter %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+{% block script %}{% endblock %}

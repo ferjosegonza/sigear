@@ -1,0 +1,29 @@
+<div id="{{layout.id}}" class="app-layout__master-detail {% if layout.reversed %}is-reversed{% endif %}">
+    <div class="master__container">
+        <div class="app-layout">
+            <div class="layout__header">
+                {% block master__header %}{% endblock %}
+            </div>
+            <div class="layout__body">
+                {% block master__body %}{% endblock %}
+            </div>
+            <div class="layout__footer">
+                {% block master__footer %}{% endblock %}
+            </div>
+        </div>
+    </div><!-- /master__container -->
+
+    <div class="detail__container">
+        <div class="app-layout">
+            <div class="layout__header">
+                {% block detail__header %}{% endblock %}
+            </div>
+            <div class="layout__body">
+                {% block detail__body %}{% endblock %}
+            </div>
+            <div class="layout__footer">
+                {% block detail__footer %}{% endblock %}
+            </div>
+        </div>
+    </div><!-- /detail__container -->
+</div>

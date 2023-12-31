@@ -1,0 +1,185 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .two_columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 10px;
+        }
+        .empresa {
+            display: grid;
+            grid-template-columns: 1fr auto;
+
+        }
+
+        .empresa > .borrar_empresa {
+
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.cuenta = {{cuenta ? (cuenta | json_encode | raw) : 'null'}};
+
+            state.dom = {
+
+            };
+
+            const CheckPassword = pass =>{
+                //To check a password between 8 to 15 characters which contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character
+                const decimal = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{8,15}$/;
+                return pass.match(decimal);
+            }
+
+            function validarNumerico(value) {
+                return /^[0-9]+$/.test(value);
+            }
+
+            state.SCHEMA_CUENTA = yup.object().shape({
+                usuario: yup.string().required().max(50).label('Usuario'),
+                apellido: yup.string().required().label('Apellido'),
+                documento_tipo: yup.string().required().label('Tipo Documento'),
+                documento: yup.string().required().label('Número Documento').test('numeric', "Debe ingresar sólo números.", function (value) {
+                    return validarNumerico(value);
+                }),
+                nombre: yup.string().required().label('Nombre'),
+                email: yup.string().email().required().label('Email'),
+                password: yup.string().test(
+                    'password',
+                    '1 mayúscula, 1 minúscula, 1 número y entre 8 y 15 caracteres',
+                    value => {
+                        if(!value || value == '') return true;
+                        return CheckPassword(value);
+                }){% if cuenta %}.notRequired(){% else %}.required(){% endif %}.label('Contraseña'),
+                confpassword: yup.string().test(
+                    'confpassword',
+                    'No válida',
+                    value => {
+                        const pass = document.querySelector('[name="password"]').value;
+                        if((value && pass && value == pass)||(!value && !pass)) return true;
+                        return false;
+                }).notRequired().label('Confirmar Contraseña')
+            });
+
+            state.guardarCuenta = formData => {
+                {% if cuenta is empty or APP_permisos["Cuentas.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/cuentas{% if cuenta is not empty %}/{{cuenta.cuenta_id}}{% endif %}`,
+                    type: {% if cuenta is not empty %}'PUT'{% else %}'POST'{% endif %},
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.querySelector("form").addEventListener('submit', e=>{validarFormularioConYup({event: e, schema: APP.state.SCHEMA_CUENTA, onValidate: APP.state.guardarCuenta, onError: console.dir})});
+
+            APP.ready(()=>{
+
+            });
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <form id="formcuenta" novalidate>
+                <section name="sectionperfil">
+                    <div class="auto_columns">
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Apellido</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="apellido" autocomplete="off" value="{{cuenta.apellido}}" required>
+                        </div>
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Nombre</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="nombre" autocomplete="off" value="{{cuenta.nombre}}" required>
+                        </div>
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Usuario</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="usuario" autocomplete="off" value="{{cuenta.cuenta_key}}" required>
+                        </div>
+                    </div>
+                    <div class="auto_columns">
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Nueva Contraseña</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="password" autocomplete="off" required title="Debe tener entre 8 y 15 caracteres, 1 minúscula, 1 mayúscula y 1 número">
+                        </div>
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Confirmar Contraseña</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="confpassword" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div class="auto_columns">
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Tipo Documento</span>
+                            </label>
+                            <select class="select select-bordered w-full" name="documento_tipo" required>
+                                <option value="" selected hidden>Seleccione...</option>
+                                {% for documento_tipo in documento_tipos %}
+                                    <option value="{{documento_tipo.id}}" {% if documento_tipo.id == cuenta.documento_tipo_id %}selected{% endif %}>{{documento_tipo.descripcion}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Número Documento</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="documento" autocomplete="off" value="{{cuenta.documento}}" required>
+                        </div>
+                    </div>
+                    <div class="auto_columns">
+                        <div class="w-full mb-3">
+                            <label class="label">
+                                <span class="label-text">Email</span>
+                            </label>
+                            <input type="text" class="input input-bordered w-full" name="email" autocomplete="off" value="{{cuenta.email}}" required>
+                        </div>
+                    </div>
+                </section>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalFooter %}
+    {% if cuenta is empty or APP_permisos["Cuentas.Editar"] %}
+    <button class="btn btn-success" type="submit" form="formcuenta" title="Guardar Cuenta">GUARDAR</button>
+    {% endif %}
+{% endblock %}

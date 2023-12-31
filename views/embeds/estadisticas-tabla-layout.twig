@@ -1,0 +1,30 @@
+<div class="app-layout__estadisticas-tabla__header">
+    {% block tabla__header %}
+        
+    {% endblock %}
+</div>
+
+<div id="{{layout.id}}" class="app-layout__estadisticas-tabla">
+    <div class="app-layout__estadisticas-tabla__estadisticas">
+        {% if layout.expandible %}
+            <button class="app-layout__estadisticas-tabla__expander" onclick="layoutToggleEstadisticas(this);">
+                <i class="hideOnExpand fas fa-long-arrow-alt-right"></i>
+                <i class="showOnExpand fas fa-long-arrow-alt-left"></i>
+            </button>
+        {% endif %}
+        {% block preEstadisticas %}
+            
+        {% endblock %}
+        <div id="{{layout.estadisticasId}}" class="app-layout__estadisticas-tabla__estadisticas__container">
+        {% block estadisticas %}
+            
+        {% endblock %}
+        </div>
+    </div><!-- /app-layout__estadisticas-tabla__estadisticas -->
+
+    <div class="app-layout__estadisticas-tabla__tabla">
+        {% block tabla %}
+            
+        {% endblock %}
+    </div><!-- /app-layout__estadisticas-tabla__tabla -->
+</div>

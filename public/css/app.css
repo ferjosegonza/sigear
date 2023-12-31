@@ -1,0 +1,351 @@
+.btn-primary {background-color: hsl(var(--p)/var(--tw-bg-opacity))!important;}
+.btn-success{
+  background-color: hsl(var(--su)/var(--tw-bg-opacity))!important;
+}
+
+.btn {
+  height: 4rem!important;
+  min-height: 4rem!important;
+  font-size: 1.2rem!important;
+}
+.label, .label-text, .input, .select {
+  font-size: 1.2rem!important;
+}
+.label {
+  margin: 0!important;
+}
+.auto-columns {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  display: grid;
+  grid-gap: 20px;
+} 
+
+@media (max-width: 600px){
+  .auto-columns {
+    grid-template-columns: 1fr;
+  }
+}
+.app-body {
+  overflow-y: auto;
+}
+.app-body > .alert {
+  max-width: 96rem;
+  width: 100%;
+  margin: 0 auto;
+}
+.app-body > .lista-btn-app {
+  max-width: 100rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-pop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 100001;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 1);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+.app-pop.active {
+  pointer-events: visible;
+  opacity: 1;
+}
+
+
+.splash-page {
+  background-color: #323e48;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.splash-page img {
+  max-width: 20rem;
+}
+
+@media only screen and (min-width: 768px) {
+  .splash-page img {
+    max-width: 30rem;
+  }
+}
+
+.mensaje {
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+  padding: 1rem 2rem;
+  margin: 1rem;
+  color: #333;
+  text-align: center;
+  border-radius: 0.5rem;
+}
+.mensaje.error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.mensaje.warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeeba;
+}
+
+.mensaje.info {
+  color: #004085;
+  background-color: #cce5ff;
+  border-color: #b8daff;
+}
+
+.mensaje.success {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+
+@keyframes a-ltr-after {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(101%);
+  }
+}
+
+@keyframes a-ltr-before {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+/*====================INPUT BOX====================*/
+
+.app-input-box{
+  position: relative;
+  padding-top: 17px;
+  z-index: 1;
+}
+.app-input-box input,
+.app-input-box select,
+.app-input-box textarea{
+  background-color: transparent;
+  border: 0px;
+  width: 100%;
+  padding: 7px 0px;
+  font-size: 14px;
+  line-height: 15px;
+  margin: 0px !important;
+}
+.app-input-box input:focus,
+.app-input-box select:focus,
+.app-input-box textarea:focus{
+  outline: none;
+  box-shadow: inherit;
+  background-color: transparent;
+}
+.app-input-box select:active{
+  background-color: transparent;
+}
+.app-input-box > span{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+.app-input-box > span:before{
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 2px;
+  bottom: 0px;
+  left: 0px;
+  background-color: #d2d2d2;
+}
+.app-input-box.no-line > span:before{
+  display: none;
+}
+.app-input-box > span:after{
+  position: absolute;
+  content: "";
+  width: 0%;
+  height: 2px;
+  bottom: 0px;
+  left: 50%;
+  background-color: #009545;
+  z-index: 2;
+  transition: 200ms all ease;
+}
+.app-input-box.no-line > span:after{
+  display: none;
+}
+.app-input-box > span > label{
+  position: absolute;
+  top: 17px;
+  left: 0px;
+  width: 100%;
+  margin: 5px 0px;
+  font-size: 16px;
+  line-height: 15px;
+  cursor: text;
+  transition: 200ms all ease;
+  z-index: -1;
+  color: #8F8F8F;
+  font-weight: 300;
+}
+.app-input-box > span > label > i {
+  margin-right: 5px;
+}
+.app-input-box input:focus ~ span > label,
+.app-input-box input:valid ~ span >label,
+.app-input-box input:read-only ~ span >label,
+.app-input-box input:disabled ~ span >label,
+.app-input-box select:focus ~ span > label,
+.app-input-box select:valid ~ span >label,
+.app-input-box select:read-only ~ span >label,
+.app-input-box select:disabled ~ span >label,
+.app-input-box textarea:focus ~ span > label,
+.app-input-box textarea:valid ~ span >label,
+.app-input-box textarea:read-only ~ span >label,
+.app-input-box textarea:disabled ~ span >label{
+  top: -3px!important;
+  font-size: 16px;
+}
+.app-input-box input:focus ~ span:after,
+.app-input-box select:focus ~ span:after,
+.app-input-box textarea:focus ~ span:after{
+  width: 100%;
+  left: 0px;
+}
+
+.app-input-box > .requerido {
+  border-bottom: 2px solid #e4271a;
+  border-radius: 0;
+}
+
+.custom-select.is-valid, .was-validated .custom-select:valid,
+.custom-select.is-invalid, .was-validated .custom-select:invalid {
+  background: none!important;
+}
+/*=============================VALIDAR FORMULARIO CON YUP=============================*/
+
+.app-input-box input.is-invalid ~ span::before,
+.app-input-box select.is-invalid ~ span::before,
+.app-input-box textarea.is-invalid ~ span::before{
+  background-color: #ce6767;
+}
+
+.app-input-box .app-form-message.invalid-feedback {
+  position: absolute;
+  top: 100%;
+}
+
+.custom-select:disabled,
+.form-control:disabled, .form-control[readonly] {
+  color: #6c757d;
+  background-color:#eaeaea;
+  padding-left: 8px;
+  border-bottom: 2px solid #c5c5c5;
+}
+
+@-moz-document url-prefix() {
+  .app-input-box > span > label {
+      top: 0px;
+  }
+
+  input:required {
+      box-shadow:none;
+  }
+  input:invalid {
+      box-shadow:0 0 3px transparent;
+  }
+}
+.table th:first-child {
+  z-index: 0!important;
+}
+
+.app-content{
+  overflow-y:hidden;
+  overflow-x:hidden;
+  scrollbar-width: thin;
+}
+
+.app-layout > .layout__body{
+  overflow:hidden;
+}
+
+.dataTables_scrollBody{
+  scrollbar-width: thin;
+}
+
+.auto_columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  align-items: center;
+  column-gap: 10px;
+}
+
+form .auto_columns {
+  align-items: start;
+}
+
+.modal-header {
+  background: #fff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
+.modal-header > .title {
+  font-size: 1.5rem;
+  color: #000;
+  font-weight: bold;
+}
+
+.modal-header > .actions button {
+  border: 0;
+  background: white;
+}
+.modal-header > .actions button:focus {
+  outline: 0;
+}
+
+.modal-header > .actions i {
+  color: #000!important;
+}
+
+.accionesBtn {
+  text-align: center;
+  padding-top: 10px;
+}
+
+
+/*================ MODALES ================*/
+.app-layout > .layout__header {
+  /*display: flex!important;*/
+}
+.app-layout > .layout__header > .title {
+  font-weight: bold;
+  font-size: 1.7rem;
+}
+
+.app-layout > .layout__header > .actions > * {
+  font-size: 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-modal > .app-modal__container > .app-layout > .layout__body {
+  background-color: #FFF;
+}

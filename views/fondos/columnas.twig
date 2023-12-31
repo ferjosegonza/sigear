@@ -1,0 +1,192 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 15px;
+        }
+        .selector h3 {
+            margin: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .selector ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            margin-top: 20px;
+        }
+        .selector ul li {
+            border: 1px solid #bdbdbd;
+            font-size: 14px;
+            line-height: 1;
+            padding: 10px;
+            transition: 300ms all ease;
+        }
+        .selector ul li:hover {
+            background: #ebebeb;
+        }
+        .selector #disponibles ul li {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .selector #asignadas ul li {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .selector #disponibles ul li::after {
+            content: "\f0da";
+            font-family: "Font Awesome 5 Free";
+            font-weight: bold;
+        }
+        .selector #asignadas ul li::before {
+            content: "\f0d9";
+            font-family: "Font Awesome 5 Free";
+            font-weight: bold;
+        }
+        div#asignadas, div#disponibles {
+            overflow-y: auto;
+            height: 50vh;
+        }
+
+        .selector h3 {
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+            state.fondo = {{fondo ? (fondo | json_encode | raw) : '[]'}};
+            state.columnas = {{columnas ? (columnas | json_encode | raw) : '[]'}};
+            state.columnasAsignadas = state.fondo.columnas.map(columna=>{
+                return {
+                    columna_id: columna.columna_id,
+                    nombre: columna.nombre
+                }
+            });
+
+            const dom = {
+                disponibles: document.getElementById('disponibles'),
+                asignadas: document.getElementById('asignadas'),
+                bsqDisponibles: document.getElementById('bsqDisponibles'),
+                bsqAsignadas: document.getElementById('bsqAsignadas'),
+            };
+
+            state.renderColumnas = ()=>{
+                let disponibles = state.columnas.filter(columna => state.columnasAsignadas.findIndex(fondosColumnas=>(fondosColumnas.columna_id??fondosColumnas.columna_id)==columna.columna_id)===-1);
+                state.renderDisponibles(disponibles.filter(item=>{return item.nombre.toLowerCase().includes(dom.bsqDisponibles.value.toLowerCase())}));
+                if(state.columnasAsignadas)
+                    state.renderAsignadas(state.columnasAsignadas.filter(item=>{return item.nombre.toLowerCase().includes(bsqAsignadas.value.toLowerCase())}));
+            }
+
+            state.renderDisponibles = (columnas)=>{
+                let html = '<ul>';
+                columnas.forEach(columna => {
+                    html += `<li title="${columna.nombre}" onclick="APP.state.asignar(${columna.columna_id})">${columna.nombre}</li>`;
+                });
+                dom.disponibles.innerHTML = html;
+            }
+
+            state.renderAsignadas = (columnas)=>{
+                let html = '<ul>';
+                columnas.forEach(columna => {
+                    html += `<li title="${columna.nombre}" onclick="APP.state.quitar(${columna.columna_id})">${columna.nombre}</li>`;
+                });
+                dom.asignadas.innerHTML = html;
+            }
+
+            state.asignar = (id)=>{
+                let columna = state.columnas.find(columna => columna.columna_id == id);
+                if(!columna) return;
+                state.columnasAsignadas.push(columna);
+                state.renderColumnas();
+            }
+
+            state.quitar = (id)=>{
+                let index = state.columnasAsignadas.findIndex(columna => columna.columna_id == id);
+                if(index<0) return;
+                state.columnasAsignadas.splice(index,1);
+                state.renderColumnas();
+            }
+
+            const guardarFondoColumnas = () => {
+                {% if APP_permisos["Fondos.Columnas.Editar"] %}
+                console.log({{fondo.fondo_id}});
+                $.ajax({
+                    url: `{{baseUrl}}/api/fondos/{{fondo.fondo_id}}/columnas`,
+                    type: 'POST', 
+                    data: {
+                        columnas: state.columnasAsignadas,
+                    },
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.getElementById('bsqDisponibles').addEventListener('keyup',state.renderColumnas);
+            document.getElementById('bsqDisponibles').addEventListener('search',state.renderColumnas);
+            document.getElementById('bsqAsignadas').addEventListener('keyup',state.renderColumnas);
+            document.getElementById('bsqAsignadas').addEventListener('search',state.renderColumnas);
+            {% if APP_permisos["Fondos.Columnas.Editar"] %}
+            document.getElementById('btnGuardar').addEventListener('click',guardarFondoColumnas);
+            {% endif %}
+            state.renderColumnas();
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="selector">
+        <div>
+            <h3>Campos Disponibles</h3>
+            <div class="w-full">
+                <input type="search" class="input input-bordered w-full" id="bsqDisponibles" autocomplete="off" placeholder="Buscar" required>
+            </div>
+            <div id="disponibles"></div>
+        </div>
+        <div>
+            <h3>Campos Asignadas</h3>
+            <div class="w-full">
+                <input type="search" class="input input-bordered w-full" id="bsqAsignadas" autocomplete="off" placeholder="Buscar" required>
+            </div>
+            <div id="asignadas"></div>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    {% if APP_permisos["Fondos.Columnas.Editar"] %} 
+    <button class="btn btn-success" id="btnGuardar" title="Guardar">GUARDAR</button>
+    {% endif %}
+{% endblock %}
+

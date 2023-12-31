@@ -1,0 +1,83 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            const permiso = {{permiso ? (permiso | json_encode | raw) : 'null'}};
+            state.SCHEMA_PERMISO = yup.object().shape({
+                nombre: yup.string().required("Debe ingresar un nombre").max(50).label('Nombre'),
+                descripcion: yup.string().notRequired().max(100).label('Descripción'),
+            });
+
+            const guardarPermiso = formData => {
+                {% if permiso is empty or APP_permisos["Permisos.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/permisos{% if permiso %}/{{permiso.id}}{% endif %}`,
+                    type: {% if permiso %}'PUT'{% else %}'POST'{% endif %},
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.querySelector("form").addEventListener('submit', e=>{validarFormularioConYup({event: e, schema: APP.state.SCHEMA_PERMISO, onValidate: guardarPermiso, onError: console.dir})});
+
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <form id="formpermiso" novalidate>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Nombre</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="nombre" autocomplete="off" value="{{permiso.key}}" required>
+                </div>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Descripción</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="descripcion" autocomplete="off" value="{{permiso.descripcion}}" required>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    {% if permiso is empty or APP_permisos["Permisos.Editar"] %}
+    <button class="btn btn-success" form="formpermiso" type="submit" title="Guardar Permiso">GUARDAR</button>
+    {% endif %}
+{% endblock %}
+

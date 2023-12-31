@@ -1,0 +1,460 @@
+{
+    "POPPER": {
+        "v1": {
+            "archivos": [
+                "popper.min.js"
+            ]
+        }
+    },
+    "BOOTSTRAP": {
+        "v4": {
+            "archivos": [
+                "bootstrap.min.js",
+                "bootstrap.min.css",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3",
+                "POPPER": "v1"
+            }
+        }
+    },
+    "JQUERY_TAGCLOUD": {
+        "v1": {
+            "archivos": [
+                "jquery.svg3dtagcloud.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "NOTIFICATIONS": {
+        "v1": {
+            "archivos": [
+                "modulo.js"
+            ]
+        }
+    },
+    "CHARTJS": {
+        "v2": {
+            "archivos": [
+                "Chart.min.js",
+                "Chart.min.css"
+            ],
+            "dependencias": {
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "PICKR": {
+        "v1": {
+            "archivos": [
+                "pickr.es5.min.js",
+                "nano.min.css",
+                "monolith.min.css",
+                "classic.min.css"
+            ]
+        }
+    },
+    "JQUERY_SLICK": {
+        "v1": {
+            "archivos": [
+                "slick.min.js",
+                "slick.css",
+                "slick-theme.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_CIRCLE_PROGRESS": {
+        "v1": {
+            "archivos": [
+                "circle-progress.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_MATERIAL_DATETIMEPICKER": {
+        "v2": {
+            "archivos": [
+                "bootstrap-material-datetimepicker.js",
+                "bootstrap-material-datetimepicker.css",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3",
+                "BOOTSTRAP": "v4",
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "BOOTSTRAP_DATETIMEPICKER": {
+        "v5": {
+            "archivos": [
+                "tempusdominus-bootstrap-4.min.js",
+                "tempusdominus-bootstrap-4.min.css",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "BOOTSTRAP": "v4",
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "MULTISELECT": {
+        "v2": {
+            "archivos": [
+                "multiselect.min.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY": {
+        "v3": {
+            "archivos": [
+                "jquery.min.js",
+                "modulo.js"
+            ]
+        }
+    },
+    "JQUERY_UI": {
+        "v1": {
+            "archivos": [
+                "jquery-ui.min.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_UPLOAD": {
+        "v4": {
+            "archivos": [
+                "jquery.uploadfile.min.js",
+                "loader.js",
+                "uploadfile.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_VALIDATE": {
+        "v1": {
+            "archivos": [
+                "jquery.validate.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_MASKEDINPUT": {
+        "v1": {
+            "archivos": [
+                "jquery.maskedinput.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_SMARTWIZARD": {
+        "v4": {
+            "archivos": [
+                "jquery.smartWizard.min.js",
+                "smart_wizard.min.css",
+                "smart_wizard_theme_arrows.min.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_DATERANGEPICKER": {
+        "v3": {
+            "archivos": [
+                "daterangepicker.js",
+                "daterangepicker.css",
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3",
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "JQUERY_TIMEAUTOCOMPLETE": {
+        "v1": {
+            "archivos": [
+                "jquery.timeAutocomplete.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_GEOCOMPLETE": {
+        "v1": {
+            "archivos": [
+                "jquery.geocomplete.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_BAR_RATING": {
+        "v1": {
+            "archivos": [
+                "jquery.barrating.min.js",
+                "fontawesome-stars.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_TIMEPICKER": {
+        "v0": {
+            "archivos": [
+                "jquery.timepicker.min.js",
+                "jquery.timepicker.min.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "JQUERY_BASE64": {
+        "v1": {
+            "archivos": [
+                "jquery.base64.min.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "MOMENT": {
+        "v2": {
+            "archivos": [
+                "moment-with-locales.min.js",
+                "modulo.js"
+            ]
+        }
+    },
+    "MOMENT_TIMEZONE": {
+        "v0": {
+            "archivos": [
+                "moment-timezone-with-data.min.js",
+                "modulo.js"
+            ],
+            "dependencias": {
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "SWEETALERT": {
+        "v2": {
+            "archivos": [
+                "sweetalert.min.js",
+                "modulo.js",
+                "modulo.css"
+            ]
+        }
+    },
+    "DATATABLE": {
+        "v1": {
+            "archivos": [
+                "datatables.min.js",
+                "datatables.min.css",
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3",
+                "JQUERY_UI": "v1",
+                "BOOTSTRAP": "v4",
+                "JQUERY_DATERANGEPICKER": "v3",
+                "SWEETALERT": "v2"
+            }
+        },
+        "v2": {
+            "archivos": [
+                "datatables.min.js",
+                "datatables.min.css",
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3",
+                "JQUERY_UI": "v1",
+                "BOOTSTRAP": "v4",
+                "JQUERY_DATERANGEPICKER": "v3",
+                "SWEETALERT": "v2"
+            }
+        },
+        "v3": {
+            "archivos": [
+                "datatables.min.js",
+                "datatables.min.css",
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3",
+                "JQUERY_UI": "v1",
+                "BOOTSTRAP": "v4",
+                "JQUERY_DATERANGEPICKER": "v3",
+                "SWEETALERT": "v2"
+            }
+        }
+    },
+    "GSAP": {
+        "v3": {
+            "archivos": [
+                "gsap.min.js",
+                "EasePack.min.js",
+                "MotionPathPlugin.min.js",
+                "PixiPlugin.min.js",
+                "ScrollTrigger.min.js",
+                "TweenLite.min.js"
+            ]
+        }
+    },
+    "FLATPICKER": {
+        "v4": {
+            "archivos": [
+                "flatpicker.min.js",
+                "flatpicker.min.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "LIGHTPICK": {
+        "v1": {
+            "archivos": [
+                "lightpick.js",
+                "lightpick.css"
+            ],
+            "dependencias": {
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "VIDEOJS": {
+        "v7": {
+            "archivos": [
+                "video.min.js",
+                "video-js.min.css",
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "ROUTER": {
+        "v1": {
+            "archivos": [
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "LAYOUT": {
+        "v1": {
+            "archivos": [
+                "modulo.js",
+                "modulo.css"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "YUP": {
+        "v0": {
+            "archivos": [
+                "main.js",
+                "modulo.js"
+            ],
+            "dependencias": {
+                "MOMENT": "v2"
+            }
+        }
+    },
+    "DROPZONE": {
+        "v5": {
+            "archivos": [
+                "dropzone.js"
+            ],
+            "dependencias": {
+                "JQUERY": "v3"
+            }
+        }
+    },
+    "BARCODE": {
+        "v3": {
+            "archivos": [
+                "jsbarcode.min.js"
+            ]
+        }
+    },
+    "TOOLTIP": {
+        "v1": {
+            "archivos": [
+                "tooltip.min.js"
+            ],
+            "dependencias": {
+                "POPPER": "v1"
+            }
+        }
+    },
+    "SORTABLEJS": {
+        "v1": {
+            "archivos": [
+                "sortable.min.js"
+            ]
+        }
+    },
+    "JSZIP": {
+        "v1": {
+            "archivos": [
+                "jszip.min.js"
+            ]
+        }
+    },
+    "JSZIP_UTILS": {
+        "v1": {
+            "archivos": [
+                "jszip-utils.min.js"
+            ]
+        }
+    },
+    "APP_PAGINATOR": {
+        "v1": {
+            "archivos": [
+                "APPPagination.min.js",
+                "APPPagination.min.css"
+            ]
+        }
+    }
+}

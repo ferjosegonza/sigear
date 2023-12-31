@@ -1,0 +1,186 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+        .estado {
+            display: grid;
+            {% if APP_permisos["Fondos.Editar"] %}
+            grid-template-columns: 4fr 1fr;
+            {% else %}
+            grid-template-columns: 1fr;
+            {% endif %}
+        }
+        .accion-desactivar {
+            color: orangered;
+        }
+        .accion-activar {
+            color: mediumseagreen;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.fondos = null;
+
+            APP.ready(() => {
+                state.fondos = $("#fondos").DataTable({
+                    titulo: 'FONDOS',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    /*filtros:{key:} key y el valor por el que se filtra*/
+                    ajax: {
+                        url: "{{baseUrl}}/api/fondos",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Fondos.Detalle"] %}onclick="APP.state.detalleFondo(${item.fondo_id})"{% endif %}`;
+                            let accionEstado = `{% if APP_permisos["Fondos.Editar"] %}<div ${item.activo == 'A'?'title="Desactivar" class="accion-desactivar"':'title="Activar" class="accion-activar"'} onclick="APP.state.cambiarEstadoFondo(${item.fondo_id},'${item.status == 'A'?'I':'A'}')"><i class="${item.status == 'A'?'fas fa-times-circle':'fas fa-check-circle'}"></i></div>{% endif %}`;
+                            let accionColumnas = `{% if APP_permisos["Fondos.Columnas"] %}onclick="APP.state.detalleFondoColumnas(${item.fondo_id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Fondos.Borrar"] %}onclick="APP.state.eliminarFondo(${item.fondo_id})"{% endif %}`;
+                             return [
+                                `<div ${accionDetalle}>${item.fondo_id}</div>`,
+                                `<div ${accionDetalle}>${item.fondo_nombre || '-'}</div>`,
+                                `<div class="estado"><div ${accionDetalle}><span ${item.activo ?'class="badge badge-success">Activo':'class="badge badge-danger">Inactivo'}</span></div> ${accionEstado}</div>`,
+                                `<div ${accionDetalle}>${item.create_time ? moment(item.ins_fecha).format('D/M/Y H:m:s'):'-'}</div>`,
+                                `<div ${accionDetalle}>${item.update_time ? moment(item.upd_fecha).format('D/M/Y H:m:s'):'-'}</div>`,
+                                {% if APP_permisos["Fondos.Columnas"] %}`<div ${accionColumnas} title="Editar Columnas"><i class="fas fa-columns"></i></div>`{% endif %},
+                                {% if APP_permisos["Fondos.Borrar"] %}`<div ${accionEliminar} title="Borrar Fondo"><i class="fas fa-trash"></i></div>`{% endif %},
+                            ]; 
+
+                          
+                        }),
+                    }
+                });
+
+                state.fondos.activarOrden("colDescripcion", {
+                    parametro: "fondo_nombre",
+                });
+
+
+                
+                state.fondos.activarFiltro("colDescripcion", {
+                    parametro: "key",
+                    autocompletar: "{{ baseUrl }}/filtros/fondos/descripcion"
+                });
+             
+                {% if APP_permisos["Fondos.Crear"] %}
+                state.fondos.agregarAccion({
+                    descripcion: 'Agregar Fondo',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/fondos:nuevo",
+                            success: html => abrirModal(html, {
+                                onClose: () => {
+                                    state.fondos.recargar();
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %}
+
+            });
+
+            {% if APP_permisos["Fondos.Detalle"] %}
+            state.detalleFondo = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/fondos/${id}`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.fondos.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Fondos.Columnas"] %}
+            state.detalleFondoColumnas = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/fondos/${id}/columnas`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.fondos.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Fondos.Editar"] %}
+            state.cambiarEstadoFondo = (id, estado) => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/fondos/${id}`,
+                    type: 'PUT',
+                    data: {
+                        status: estado
+                    },
+                    success: response => {
+                        state.fondos.recargar();
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Fondos.Borrar"] %}
+            state.eliminarFondo = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/fondos/${id}`,
+                    type: 'delete',
+                    success: response => {
+                        state.fondos.recargar();
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        });
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+        };
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="fondos" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colId">ID</th>
+                            <th id="colDescripcion">DESCRIPCION</th>
+                            <th id="colEstado">ESTADO</th>
+                            <th id="colCreacion">CREACION</th>
+                            <th id="colModificacion">MODIFICACION</th>
+                        {#     {% if APP_permisos["Fondos.Columnas"] %} #}
+                            <th id="colPermisos">COLUMNAS EXCEL</th>
+                          {#   {% endif %}
+                            {% if APP_permisos["Fondos.Borrar"] %} #}
+                            <th id="colEliminar">BORRAR</th>
+                           {#  {% endif %} #}
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

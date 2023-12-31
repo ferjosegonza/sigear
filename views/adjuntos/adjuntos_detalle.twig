@@ -1,0 +1,233 @@
+{% extends "extends/modal.twig" %}
+
+{% block style %}
+    <style>
+        .sw-main {
+            min-height: 510px !important;
+        }
+
+        .archivo-imagen {
+            display: grid;
+            justify-content: center;
+        }
+
+        .file-upload > .file-upload-body {
+            height: 160px;
+            width: 160px;
+            border-radius: 100px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 4px solid gray;
+            overflow: hidden;
+
+            transition: all 500ms;
+            color: #FFFFFF;
+            font-size: 50px;
+        }
+
+        .file-upload > .file-upload-body > img {
+            object-fit: cover;
+            width: 160px;
+            height: 160px;
+            position: absolute;
+        }
+
+        .borrar_imagen {
+            background: #f44336;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #fff;
+            font-size: 13px;
+        }
+        div#archivoUploader {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        div#archivoUploader img {
+            margin: auto;
+            max-width: 150px
+        }
+
+        .adjunto {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+        .adjunto #previewArchivo iframe {
+            width: 500px;
+            margin: auto;
+        }
+        .adjunto #previewArchivo img{
+            width: 400px;
+            margin: auto;
+        }
+
+        .file-input {
+                border: 1px solid #d2d4d7;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.adjunto = {{adjunto ? (adjunto | json_encode | raw) : 'null'}};
+            state.adjuntoTipos = {{adjuntoTipos ? (adjuntoTipos | json_encode | raw) : 'null'}};
+            state.acreditacionID = {{acreditacionID | default("null")}};
+
+            state.SCHEMA_ADJUNTO = yup.object().shape({
+                descripcion: yup.string().required("REQUERIDO").max(100),
+                adjuntoTipo: yup.string().required("REQUERIDO"),
+            });
+
+            state.dom = {
+                formAdjunto: document.getElementById('formAdjunto'),
+                inputArchivo: document.getElementById('inputArchivo'),
+                previewArchivoContainer: document.getElementById('previewArchivoContainer'),
+                previewArchivo: document.getElementById('previewArchivo'),
+            };
+
+            APP.ready(()=>{
+
+                {% if (APP_permisos["SolicitudAdjuntos.Crear"] and adjunto is empty) or (APP_permisos["SolicitudAdjuntos.Editar"] and adjunto is not empty) %}
+                    state.guardar = formData => {
+                        formData.data.acreditacionID = state.acreditacionID;
+                        let formDataCompleto = new FormData();
+                        formDataCompleto.append('datos', JSON.stringify(formData.data));
+
+                        if(state.dom.inputArchivo.files.length){
+                            formDataCompleto.append('file', state.dom.inputArchivo.files[0]);
+                        }
+
+                        $.ajax({
+                            url: `{{baseUrl}}/api/acreditacion-adjuntos/${state.adjunto ? `${state.adjunto.id}/actualizar` : ''}`,
+                            //type: `${state.adjunto ? 'PUT' : 'POST'}`,
+                            type: 'POST',
+                            data: formDataCompleto,
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            success: json => {
+                                swal({
+                                    icon: "success",
+                                    text: "Se guardo correctamente",
+                                    buttons:[false,'Aceptar']
+                                }).then(value => {
+                                    cerrarModal();
+                                });
+                            },
+                            error: swalError
+                        });
+                    }
+                {% endif %}
+
+                state.verArchivo = (url, tipoArchivo) => {
+                    let html = ``;
+                    if(tipoArchivo == 'application/pdf'){
+                        html = `<iframe src="${url}#navpanes=0&scrollbar=0" height="500px" width="100%" style="border: 0;"></iframe>`;
+                    } else if(tipoArchivo == 'image/jpeg') {
+                        html = `<div style="text-align:center"><img src="${url}" title="ARCHIVO ADJUNTO"></div>`;
+                    } else {
+                        html = `<div style="text-align:center"><p></p></div>`;
+                        state.dom.inputArchivo.value = '',
+                        swal({
+                            icon: "warning",
+                            text: "Solo se permiten archivos PDF o JPG.",
+                            buttons:[false,'Aceptar']
+                        });
+                    }
+                    state.dom.previewArchivo.innerHTML = html;
+                }
+
+                state.dom.formAdjunto.addEventListener('submit', e => {
+                    e.preventDefault(); e.stopPropagation();
+                    let input=document.getElementById('inputArchivo');
+                    if (APP.parentState.archivos){
+                        APP.parentState.archivos.push(input.files[0]);
+                        // console.dir(APP.parentState.archivos);
+
+                    }
+                    document.getElementById('archivos-seleccionados').innerHTML = '';
+                    let titulo = document.createElement('div');
+                    titulo.innerHTML = `<div><b>ARCHIVOS PARA ADJUNTAR:</b></div>`;
+                    document.getElementById('archivos-seleccionados').appendChild(titulo);
+                    for (let i = 0; i < APP.parentState.archivos.length; i++) {
+                        let deleteButton = document.createElement('button');
+                        let archivo = APP.parentState.archivos[i];
+                        let nombre = archivo.name || 'Archivo sin nombre';
+                        let size = archivo.size || 0;
+                        let tipo = archivo.type || 'Tipo de archivo desconocido';
+                        let elemento = document.createElement('div');
+                        elemento.innerHTML = `<div>${nombre} - (${tipo} - ${size} bytes)</div>`;
+                        elemento.innerHTML = `<div class='inline-block'>${nombre} - (${tipo} - ${size} bytes)</div>`;
+                        elemento.appendChild(deleteButton);
+                        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteButton.addEventListener('click', () => {
+                            APP.parentState.archivos.splice(i, 1);
+                            elemento.remove();
+                            deleteButton.remove();
+                        });
+                        document.getElementById('archivos-seleccionados').appendChild(elemento);
+                    }
+                    cerrarModal();
+
+                });
+
+
+                state.dom.inputArchivo.addEventListener('change', e => {
+                    if(e.target.files.length) {
+                        state.verArchivo(URL.createObjectURL(e.target.files[0]), e.target.files[0].type);
+                    }
+                });
+
+                if (state.adjunto && state.adjunto.archivo_nombre) {
+                    state.verArchivo(state.adjunto.archivo_nombre, state.adjunto.archivo_tipo);
+                }
+            });
+        }
+
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content adjunto">
+            <form id="formAdjunto" novalidate>
+                <div class="d-flex mb-3">
+                    <div class="mb-3 w-100">
+                        <input type="file" id="inputArchivo" name="inputArchivo" accept=".pdf, image/jpeg" class="w-100 pointer file-input w-full" placeholder="Seleccionar archivo...">
+                    </div>
+                </div>
+            </form>
+
+            <div id="previewArchivoContainer">
+                <div id="previewArchivo"></div>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    <button class="btn btn-success" id="adjuntarArchivo" form="formAdjunto" type="submit" title="Guardar">GUARDAR</button>
+{% endblock %}

@@ -1,0 +1,486 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        #columns {
+            display: grid;
+            grid-template-columns: 0.4fr 1fr;
+            height: 100%;
+            overflow: hidden;
+            column-gap: 20px;
+            padding: 20px;
+        }
+
+        #columns > aside {
+            background: #f3f3f3;
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        .header-archivos{
+            padding: 20px;
+            margin-bottom:10px;
+        }
+
+        #file-list > li {
+            display: grid!important;
+            grid-template-columns: auto 1fr auto auto auto;
+            grid-column-gap: 10px;
+            cursor: move;
+        }
+       
+        li.active-image {
+            background-color: #FEC;
+        }
+
+        .lds-dual-ring {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            top:50%;
+            left:50%;
+        }
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #444;
+            border-color: #444 transparent #444 transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+        @keyframes lds-dual-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #imagePreview, #imageToCanvas {
+            position: relative;
+        }
+
+
+        #tools {
+            position: fixed;
+            background: #eee;
+            z-index: 200;
+            height: auto;
+            width: auto;
+            padding: 5px;
+        }
+
+        #canvas {
+            width: 100%;
+            height: auto;
+            margin-top: 60px;
+        }
+
+        #imageToCanvas {
+            cursor: auto;
+        }
+       
+        #imgEditor {
+            cursor: crosshair;
+            position: relative;
+        }
+
+        #file-list li .deletebtn, #file-list li .editbtn {
+            display: none;
+        }
+
+        #file-list li.active-image .deletebtn, #file-list li.active-image .editbtn {
+             display: block;
+        }
+
+        form#formImagen > div {
+            margin-left: 25px;
+        }
+
+        form#formImagen > button.btn {
+            margin-left: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript" src="/js/sortable.min.js?{{appVersion}}"></script>
+    <script type="text/javascript" src="/js/imageeditor.js?{{appVersion}}"></script>
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+        }
+
+        //var imagePreview = document.getElementById('imagePreview');
+        var imageToCanvas = document.getElementById('imageToCanvas');
+        var canvas = document.getElementById('canvas');
+        var tools = document.getElementById('tools');
+        var activeImage = false;
+        var updateCache = '?1={{ random(1, 10000) }}';
+
+        buscadorRepositorio = (informeID) => {
+            $.ajax({
+                url: "{{ baseUrl }}/archivos/buscar",
+                type: 'GET',
+                data: {'informeID' : informeID},
+                success: html => abrirDetalle(html, {
+                    onClose: () => {
+                        // se modifica la imagen se fuerza Cache
+                        updateImagenesList(activeImage); 
+                        //actualizarOrdenes(notify = false);
+                    }
+                }),
+                error: swalError
+            });
+        }
+
+        verImagen = (imagenID, forceCache='') => {
+            
+            if(imagenID){
+                imageToCanvas.style.display = 'none';
+                
+                activeImage = imagenID;
+
+                imageToCanvas.src = '{{ baseUrl }}/archivos/{{informe.informe_id}}/'+imagenID+forceCache;
+                imageToCanvas.style.display = 'block';
+                
+                $('#loading').show();
+
+                // marco item activo en lista
+                document.querySelectorAll('#file-list li').forEach(function(item, index){
+                    item.classList.remove('active-image');
+                });
+                document.getElementById('li-'+imagenID).classList.add('active-image');
+
+            } else {
+
+                $('#loading').hide();
+
+            }   
+
+            tools.style.display = 'none';
+
+            var activeLi = document.querySelector('li.active-image');    
+            if(activeLi){ 
+                document.getElementById('nombre').value = activeLi.getAttribute('data-nombre');
+                document.getElementById('orden').value = activeLi.getAttribute('data-orden');
+                document.getElementById('imagenID').value = activeLi.getAttribute('data-id');
+            }      
+        }
+
+        editarImagen = (imagenID) => {
+            drawOnImage(imageToCanvas);
+            canvas.style.display = 'block';
+            imageToCanvas.style.display = 'none';    
+            tools.style.display = 'block';
+        }
+
+        eliminarImagen = (imagenID) => {
+            
+            swal({
+                title: `¿Está seguro que desea eliminar el archivo?`,
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            })
+            .then((confirmacion) => {
+                if (confirmacion) {
+                    $.ajax({
+                        url: "{{ baseUrl }}/api/archivos/"+imagenID,
+                        type: 'DELETE',
+                         data: {'informeID' : '{{ informe.informe_id }}'},
+                        success: html => {
+                           swal({
+                                icon: "success",
+                                text: "Se eliminó correctamente",
+                                buttons:[false,'Aceptar']
+                            });
+                            updateImagenesList(false); 
+                        },
+                        error: swalError
+                    });
+                }
+            });
+        }
+
+        updateImagenesList = (selectedImage = false) => {
+           
+            $.ajax({
+                url: "{{ baseUrl }}/api/informes/{{informe.informe_id}}/imagenes",
+                type: 'GET',
+                data: {},
+                success: json => {
+                    var fileList = document.getElementById('file-list');
+                    fileList.innerHTML = "";
+                    var liHtml = ``;
+                    
+                    if(json.data.length > 0){
+                        
+                        json.data.forEach(function(item, index){
+                            
+                            // selected image
+                            if(selectedImage === false){
+                                if(index == 0){
+                                    selectedImage = item.informe_archivo_id;
+                                } 
+                            } 
+
+                            var liClass = (selectedImage == item.informe_archivo_id) ? 'active-image' : '';
+                            
+                            liHtml += `<li id="li-${item.informe_archivo_id}"  class="${liClass} list-group-item d-flex justify-content-between align-items-center" data-id="${item.informe_archivo_id}"  data-nombre="${item.nombre}" data-orden="${item.orden != 'null' ? item.orden : 0}">
+                                            <i class="fas fa-grip-vertical"></i>
+                                            ${item.nombre}
+                                            <i onclick="verImagen(${item.informe_archivo_id}, '${updateCache}' )" class="fas fa-eye"></i>
+                                            <i id="edit_btn_${item.informe_archivo_id}" onclick="editarImagen()" class="fas fa-edit editbtn"></i>
+                                            <i id="delete_btn_${item.informe_archivo_id}" onclick="eliminarImagen(${item.informe_archivo_id})" class="fas fa-trash deletebtn"></i>
+                                        </li>`;
+                         }); 
+                    
+                    } else {
+                        liHtml += `<li id="repo-empty" class="list-group-item d-flex justify-content-between align-items-center">
+                                           <div id="empty-archivos" class="alert alert-light" role="alert">
+                                                No hay imagenes en el informe
+                                            </div>
+                                    </li>`;
+
+                        imageToCanvas.src = '';  
+                        canvas.style.display = 'none';          
+                    }
+                    fileList.innerHTML = liHtml;  
+
+                    if(selectedImage){
+                        verImagen(selectedImage, updateCache);
+                        activeImage = selectedImage;
+                    }
+                    
+                     
+                },
+                error: swalError
+            });
+        }
+
+        var guardarImagen = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            var canvas = document.getElementById("canvas");
+            var imgSrc    = canvas.toDataURL("image/jpg");
+            var nombre = document.getElementById('nombre').value;
+            var orden = document.getElementById('orden').value;
+            var imagenID = document.getElementById('imagenID').value;
+
+            var base64ImageContent = imgSrc.replace(/^data:image\/(png|jpeg);base64,/, "");
+            var blob = base64ToBlob(base64ImageContent, 'image/jpg');                
+            var formData = new FormData();
+            formData.append('imagen', blob);
+            formData.append('informeID', '{{informe.informe_id}}');
+            formData.append('imagenID', imagenID);
+            formData.append('orden', orden);
+            formData.append('nombre', nombre);
+
+            $.ajax({
+                url: "{{ baseUrl }}/api/archivos/"+imagenID,
+                type: 'POST',
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: formData,
+                success: json => {
+                    
+                    swal({
+                        icon: "success",
+                        text: "IMAGEN ACTUALIZADA EN EL INFORME",
+                        buttons:[false,'Aceptar']
+                    });
+                    // se modifica la imagen se fuerza Cache
+                    canvas.style.display = 'none';
+                    updateCache = '?1='+Math.floor(Math.random() * 10000);
+                    updateImagenesList(activeImage);
+                    //actualizarOrdenes(notify = false);
+                },
+                error: swalError
+            });
+        }
+
+        function base64ToBlob(base64, mime){
+            mime = mime || '';
+            var sliceSize = 1024;
+            var byteChars = window.atob(base64);
+            var byteArrays = [];
+
+            for (var offset = 0, len = byteChars.length; offset < len; offset += sliceSize) {
+                var slice = byteChars.slice(offset, offset + sliceSize);
+
+                var byteNumbers = new Array(slice.length);
+                for (var i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+
+                var byteArray = new Uint8Array(byteNumbers);
+
+                byteArrays.push(byteArray);
+            }
+
+            return new Blob(byteArrays, {type: mime});
+        }
+
+        function base64ToArrayBuffer (base64){
+            const binaryString = window.atob(base64); // Comment this if not using base64
+            const bytes = new Uint8Array(binaryString.length);
+            return bytes.map((byte, i) => binaryString.charCodeAt(i));
+        }
+
+        function createAndDownloadBlobFile (body, filename, extension = 'pdf'){
+            const blob = new Blob([body]);
+            const fileName = `${filename}.${extension}`;
+            const link = document.createElement('a');
+            // Browsers that support HTML5 download attribute
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        actualizarOrdenes = (notify) => {
+            var positions = [];
+            document.querySelectorAll('#file-list > li ').forEach(function(item, index){
+                positions.push({'imagenID': item.getAttribute('data-id'), 'nombre' : item.getAttribute('data-nombre'), 'orden' : index });
+            });
+            $.ajax({
+                url: "{{ baseUrl }}/api/archivos/update/orden",
+                type: 'POST',
+                data: {'positions' : positions},
+                success: html => {
+                    if(notify){
+                        swal({
+                            icon: "success",
+                            text: "Se actualizó el orden de imagenes correctamente",
+                            buttons:[false,'Aceptar']
+                        });
+                    }
+                },
+                error: swalError
+            });
+        }
+        
+
+        crearPdf= (informeID) => {
+            $.ajax({
+                    url: "{{ baseUrl }}/api/informes/"+informeID+"/pdf/crear",
+                    type: 'GET',
+                    success: pdf => {
+                        const arrayBuffer = base64ToArrayBuffer(pdf);
+                        createAndDownloadBlobFile(arrayBuffer, "{{informe.descripcion|upper}}");
+                        
+                    },
+                    error: swalError
+                });
+        }
+
+        new Sortable(document.getElementById('file-list'), {
+            animation: 150,
+            ghostClass: 'blue-background-class',
+            // Called by any change to the list (add / update / remove)
+            onSort: function (/**Event*/evt) {
+                actualizarOrdenes(notify = true);
+            }
+        });
+
+        imageToCanvas.addEventListener("load", event => {
+            var isLoadedSuccessfully = imageToCanvas.complete && imageToCanvas.naturalWidth !== 0;
+            if(isLoadedSuccessfully){
+               // imageToCanvas.style.display = 'block'
+                canvas.style.display = 'none';    
+                imageToCanvas.style.display = 'block';  
+                $('#loading').hide();
+            }
+        });
+
+        //init
+        updateImagenesList(false); 
+
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    
+{% endblock %}
+
+{% block modalBody %}
+    <div id="columns">
+        <aside>
+            <div id="informes-layer">
+                <div class="header-archivos">
+                    <h3 style="margin: 10px;">{{informe.descripcion|upper}}</h3>
+                    <button class="btn btn-success btn-sm ml-2 pl-3 pr-3 gap-2" onclick="buscadorRepositorio({{informe.informe_id}})"> BUSCAR REPOSITORIO <i class="fas fa-search" title="buscar"></i></button>
+                    <button class="btn btn-warning btn-sm ml-2 pl-3 pr-3 gap-2" onclick="crearPdf({{informe.informe_id}})"> PDF <i class="fas fa-file" title="pdf"></i></button>
+                </div>
+                <ul id="file-list" class="list-group list-group-flush">
+                    
+                </ul>
+            </div> 
+
+        </aside>
+        
+        <div id="imgEditor" style='overflow: scroll;'>
+            <div id="tools">
+                <form id="formImagen" class="form-inline">
+                    <input type="hidden" class="form-control" id="informeID" name="informeID" value="{{informe.informe_id}}">
+                    <input type="hidden" class="form-control" id="imagenID" name="imagenID" value="">    
+                    <input type="hidden" class="form-control" id="orden" name="orden" value="">    
+
+                    <div class="form-group">
+                        <label class="form-label" for="sizeRange">Trazo</label>
+                        <input
+                            type="range"
+                            min="1"
+                            max="50"
+                            value="25"
+                            class="form-control size"
+                            id="sizeRange"
+                        />
+                    </div>
+
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="colorRadio" value="black" checked />
+                        <label class="form-check-label" for="black">Tachar</label>   
+                    </div>
+
+                    <div class="form-check">                    
+                        <input type="radio" class="form-check-input" name="colorRadio" value="yellow" />
+                        <label class="form-check-label" for="yellow">Resaltar</label>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="nombre" name="nombre" value="" class="form-control" placeholder="Nombre">
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm" onclick="guardarImagen(event)">Guardar</button>
+                </form>
+                
+            </div>
+            <div id="loading" class="lds-dual-ring" {% if not archivos %}style='display:none;'{% endif %}></div>
+            <img id="imageToCanvas" src=""/>
+            <canvas id="canvas"></canvas>
+            <!-- <img id="imagePreview" src=""/> -->
+        </div>    
+    </div>
+   
+        
+
+{% endblock %}
+{% block modalFooter %}
+    
+{% endblock %}
+

@@ -1,0 +1,191 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 15px;
+        }
+        .selector h3 {
+            margin: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .selector ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            margin-top: 20px;
+        }
+        .selector ul li {
+            border: 1px solid #bdbdbd;
+            font-size: 14px;
+            line-height: 1;
+            padding: 10px;
+            transition: 300ms all ease;
+        }
+        .selector ul li:hover {
+            background: #ebebeb;
+        }
+        .selector #disponibles ul li {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .selector #asignados ul li {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .selector #disponibles ul li::after {
+            content: "\f0da";
+            font-family: "Font Awesome 5 Free";
+            font-weight: bold;
+        }
+        .selector #asignados ul li::before {
+            content: "\f0d9";
+            font-family: "Font Awesome 5 Free";
+            font-weight: bold;
+        }
+        div#asignados, div#disponibles {
+            overflow-y: auto;
+            height: 50vh;
+        }
+
+        .selector h3 {
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+            state.rol = {{rol ? (rol | json_encode | raw) : '[]'}};
+            state.permisos = {{permisos ? (permisos | json_encode | raw) : '[]'}};
+            state.permisosAsignados = state.rol.permisos.map(permiso=>{
+                return {
+                    id: permiso.permiso_id,
+                    key: permiso.permiso_key
+                }
+            });
+
+            const dom = {
+                disponibles: document.getElementById('disponibles'),
+                asignados: document.getElementById('asignados'),
+                bsqDisponibles: document.getElementById('bsqDisponibles'),
+                bsqAsignados: document.getElementById('bsqAsignados'),
+            };
+
+            state.renderPermisos = ()=>{
+                let disponibles = state.permisos.filter(permiso => state.permisosAsignados.findIndex(rolPermiso=>(rolPermiso.id??rolPermiso.id)==permiso.id)===-1);
+                state.renderDisponibles(disponibles.filter(item=>{return item.key.toLowerCase().includes(dom.bsqDisponibles.value.toLowerCase())}));
+                if(state.permisosAsignados)
+                    state.renderAsignados(state.permisosAsignados.filter(item=>{return item.key.toLowerCase().includes(bsqAsignados.value.toLowerCase())}));
+            }
+
+            state.renderDisponibles = (permisos)=>{
+                let html = '<ul>';
+                permisos.forEach(permiso => {
+                    html += `<li title="${permiso.descripcion}" onclick="APP.state.asignar(${permiso.id})">${permiso.key}</li>`;
+                });
+                dom.disponibles.innerHTML = html;
+            }
+
+            state.renderAsignados = (permisos)=>{
+                let html = '<ul>';
+                permisos.forEach(permiso => {
+                    html += `<li title="${permiso.descripcion}" onclick="APP.state.quitar(${permiso.id})">${permiso.key}</li>`;
+                });
+                dom.asignados.innerHTML = html;
+            }
+
+            state.asignar = (id)=>{
+                let permiso = state.permisos.find(permiso => permiso.id == id);
+                if(!permiso) return;
+                state.permisosAsignados.push(permiso);
+                state.renderPermisos();
+            }
+
+            state.quitar = (id)=>{
+                let index = state.permisosAsignados.findIndex(permiso => permiso.id == id);
+                if(index<0) return;
+                state.permisosAsignados.splice(index,1);
+                state.renderPermisos();
+            }
+
+            const guardarRolPermisos = () => {
+                {% if APP_permisos["Roles.Permisos.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/roles/{{rol.id}}/permisos`,
+                    type: 'POST',
+                    data: {
+                        permisos: state.permisosAsignados,
+                    },
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.getElementById('bsqDisponibles').addEventListener('keyup',state.renderPermisos);
+            document.getElementById('bsqDisponibles').addEventListener('search',state.renderPermisos);
+            document.getElementById('bsqAsignados').addEventListener('keyup',state.renderPermisos);
+            document.getElementById('bsqAsignados').addEventListener('search',state.renderPermisos);
+            {% if APP_permisos["Roles.Permisos.Editar"] %}
+            document.getElementById('btnGuardar').addEventListener('click',guardarRolPermisos);
+            {% endif %}
+            state.renderPermisos();
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="selector">
+        <div>
+            <h3>Disponibles</h3>
+            <div class="w-full">
+                <input type="search" class="input input-bordered w-full" id="bsqDisponibles" autocomplete="off" placeholder="Buscar" required>
+            </div>
+            <div id="disponibles"></div>
+        </div>
+        <div>
+            <h3>Asignados</h3>
+            <div class="w-full">
+                <input type="search" class="input input-bordered w-full" id="bsqAsignados" autocomplete="off" placeholder="Buscar" required>
+            </div>
+            <div id="asignados"></div>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    {% if APP_permisos["Roles.Permisos.Editar"] %}
+    <button class="btn btn-success" id="btnGuardar" title="Guardar">GUARDAR</button>
+    {% endif %}
+{% endblock %}
+

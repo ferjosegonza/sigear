@@ -1,0 +1,108 @@
+{% extends 'extends/html.twig' %}
+{% block htmlBody %}
+
+    <div class="error__container {% if error.metadata %}with__metadata{% endif %}">
+        <div class="error__header">
+            {% if error.code %}
+                <div class="error__status">{{error.code}}</div>
+            {% endif %}
+            <div class="error__description">{{error.message}}</div>
+        </div>
+        {% if error.metadata %}
+            <div class="error__body">
+                {% if error.metadata.ruta %}
+                    <div class="error__line">
+                        <div class="error__line__title">RUTA</div>
+                        <div class="error__line__content">
+                            {% if error.metadata.ruta.base %}<p><small>BASE =</small> {{error.metadata.ruta.base}}</p>{% endif %}
+                            <small>PATH =</small> {{error.metadata.ruta.path}}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if error.metadata.archivo %}
+                    <div class="error__line">
+                        <div class="error__line__title">ARCHIVO</div>
+                        <div class="error__line__content">{{error.metadata.archivo}}</div>
+                    </div>
+                {% endif %}
+
+                {% if error.metadata.linea %}
+                    <div class="error__line">
+                        <div class="error__line__title">LINEA</div>
+                        <div class="error__line__content">{{error.metadata.linea}}</div>
+                    </div>
+                {% endif %}
+
+                {% if error.metadata.codigo %}
+                    <div class="error__line">
+                        <div class="error__line__title">CÓDIGO</div>
+                        <div class="error__line__content">{{error.metadata.codigo}}</div>
+                    </div>
+                {% endif %}
+
+                {% if error.metadata.queryConVariables %}
+                    <div class="error__line ">
+                        <div class="error__line__title">ERROR BASE DE DATOS</div>
+                        <div class="error__line__content">
+                            <div class="error__trace">
+                                <div class="error__box">
+                                    <div class="error__box__title">QUERY CON PARAMETROS</div>
+                                    <div class="error__box__content">{{error.metadata.queryConVariables}}</div>
+                                </div>
+
+                                <div class="error__box">
+                                    <div class="error__box__title">QUERY</div>
+                                    <div class="error__box__content">{{error.metadata.query}}</div>
+                                </div>
+
+                                {% for key, param in error.metadata.params %}
+                                    <div class="error__box">
+                                        <div class="error__box__title">{{key}}</div>
+                                        <div class="error__box__content">{{param}}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if error.metadata.trace %}
+                    <div class="error__line ">
+                        <div class="error__line__title">TRACE</div>
+                        <div class="error__line__content">
+                            {% for t in error.metadata.trace %}
+                                <div class="error__trace">
+                                    {% if t.class %}
+                                        <div class="error__box">
+                                            <div class="error__box__title">CLASE</div>
+                                            <div class="error__box__content">{{t.class}}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if t.function %}
+                                        <div class="error__box">
+                                            <div class="error__box__title">FUNCIÓN</div>
+                                            <div class="error__box__content">{{t.function}}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if t.file %}
+                                        <div class="error__box">
+                                            <div class="error__box__title">ARCHIVO</div>
+                                            <div class="error__box__content">{{t.file}}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if t.line %}
+                                        <div class="error__box">
+                                            <div class="error__box__title">LINEA</div>
+                                            <div class="error__box__content">{{t.line}}</div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

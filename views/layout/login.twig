@@ -1,0 +1,157 @@
+{% extends "extends/base.twig" %}
+
+{% block title %}Acceso al sistema{% endblock %}
+{% block style %}
+	<style>
+		.password-input {
+			position: absolute;
+			left: unset;
+			right: 7px;
+			bottom: 5px;
+			font-size: 20px;
+			color: gray;
+			background: none;
+			border: none;
+		}
+
+		.input {
+			font-size: 15px!important;
+    		height: 40px;
+		}
+
+		/*==============================LOGIN==============================*/
+
+		.login-wrapper {
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top: 0;
+			left: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-image: url('{{baseUrl}}/images/background-login.jpg');
+			background-repeat: no-repeat;
+			background-size: cover;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.login-wrapper > form {
+			width: 100%;
+		}
+
+		.login-wrapper .logo {
+			width: 220px;
+    		margin: 20px auto 0;
+		}
+		.login-wrapper .card-body .btn-primary {
+			background: #ba201e!important;
+			border-color: #ba201e!important;
+		}
+		button#togglePassword {
+			margin-top: 5px;
+			margin-right: 5px;
+			font-size: 17px;
+		}
+		@media(max-width: 500px){
+			.login-wrapper {
+				grid-template-columns: 1fr;
+			}
+		}
+</style>
+{% endblock %}
+{% block script %}
+	<script>
+		APP.init({
+			BOOTSTRAP: "v4",
+			YUP: "v0"
+		});
+
+        APP.state = new function() {
+            const state = this;
+
+			const dom = {
+				error: document.querySelector(".error"),
+				form: document.querySelector("form"),
+				user: document.querySelector("#input-user"),
+				pass: document.querySelector("#input-pass"),
+				togglePassword: document.querySelector("#togglePassword"),
+				togglePasswordIcon: document.querySelector("#togglePassword i"),
+				login: document.querySelector("#btn-ingresar"),
+			}
+
+            const displayError = (error) => {
+                dom.error.innerHTML = `Hubo un problema con las credenciales intenta de nuevo por favor.<br>
+                                            <ul><li>${error}</li></ul>`;
+            }
+
+			const iniciarSesion = (parsedForm)=>{
+				axios.post('{{baseUrl}}/api/sso/login', parsedForm.data)
+				.then(response => {
+					window.location.href = '{{baseUrl}}';
+				})
+				.catch(error => {
+					if (!error.response) return;
+					if (error.response.status == 403) {
+						window.location.reload();
+						return;
+					}
+					displayError(error.response.data.error.metadata);
+				});
+			};
+
+			dom.togglePassword.addEventListener('click', () => {
+				if (dom.pass.type == 'password') {
+					dom.pass.type = 'text'
+					dom.togglePasswordIcon.classList.remove('fa-eye')
+					dom.togglePasswordIcon.classList.add('fa-eye-slash')
+					dom.pass.focus();
+					return
+				}
+				dom.pass.type = 'password'
+				dom.togglePasswordIcon.classList.remove('fa-eye-slash')
+				dom.togglePasswordIcon.classList.add('fa-eye')
+				dom.pass.focus();
+			})
+
+            APP.ready(() => {
+				state.schema = yup.object().shape({
+					user: yup.string().required().label('Usuario'),
+					password: yup.string().required('Contraseña requerida').label('Contraseña')
+				});
+				dom.form.addEventListener('submit', e=>{validarFormularioConYup({event: e, schema: state.schema, onValidate: iniciarSesion, onError: console.dir})});
+
+            });
+
+        };
+    </script>
+{% endblock %}
+{% block htmlBody %}
+<div class="login-wrapper">
+	<form novalidate>
+		<input type="hidden" name="csrftoken" value="{{csrftoken}}">
+		<div class="hero min-h-screen">
+			<div class="hero-content flex-col lg:flex-row-reverse">
+				<div class="card w-full shadow-2xl bg-base-100" style="width: 400px; background: #f3f3f3;"> 
+					<img class="logo" src="{{baseUrl}}/images/sigear.png" alt="Logo de Sigear" srcset="">
+					<div class="card-body">
+						<div class="w-full mb-3">
+							<input type="text" placeholder="Usuario" class="input input-bordered w-full" id="input-user" type="text" name="user" autocomplete="username" noValidate required/>
+						</div>
+						<div class="w-full mb-3 relative">
+							<input placeholder="Contraseña" class="input input-bordered w-full" id="input-pass" type="password" name="password" autocomplete="current-password" noValidate required/>
+							<button id="togglePassword" type="button" class="password-btn password-input absolute top-0"><i class="fas fa-eye"></i></button>
+						</div>
+						<div class="error text-lg text-red-500 text-center"></div>
+						<div class="mt-6">
+							<button class="btn btn-primary w-full" type="submit">Ingresar</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+	<div></div>
+</div>
+{% endblock %}

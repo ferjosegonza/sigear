@@ -1,0 +1,76 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            const institucion = {{institucion ? (institucion | json_encode | raw) : 'null'}};
+
+            state.SCHEMA_INSTITUCIONES = yup.object().shape({
+                descripcion: yup.string().required("Debe ingresar una descripción para la Institución.").max(150).label('Descripcion')
+            });
+
+
+            const guardarInstitucion = formData => {
+                {% if institucion is empty or APP_permisos["Instituciones.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/instituciones{% if institucion %}/{{institucion.institucion_id}}{% endif %}`,
+                    type: {% if institucion %}'PUT'{% else %}'POST'{% endif %},
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.querySelector("form").addEventListener('submit', e=>{validarFormularioConYup({event: e, schema: APP.state.SCHEMA_INSTITUCIONES, onValidate: guardarInstitucion, onError: console.dir})});
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <form id="forminstitucion" novalidate>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Descripción de la Institución</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="descripcion" autocomplete="off" value="{{institucion.descripcion}}" required>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    {% if institucion is empty or APP_permisos["Instituciones.Editar"] %}
+    <button class="btn btn-success" form="forminstitucion" type="submit" title="Guardar Institución">GUARDAR</button>
+    {% endif %}
+{% endblock %}

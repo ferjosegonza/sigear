@@ -1,0 +1,245 @@
+{% extends "extends/modal.twig" %}
+{% block style %}
+    <style>
+        .app-body.app-body--with-padding {
+            overflow-x: hidden;
+        }
+        .organigrama-app {
+            text-align: left;
+            display: block;
+        }
+        .organigrama-app.main-tree {
+            display: inline-block;
+            width: 100%;
+            padding: 0;
+            list-style: none;
+            margin: 0;
+        }
+        .organigrama-app:not(.main-tree) {
+            padding-left: 1.2em;
+        }
+        .organigrama-app:not(.main-tree) li {
+            overflow: hidden;
+            height: 0;
+            display: block;
+        }
+        .organigrama-app label {
+            display: block;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+            margin: 0;
+            padding: 10px 0;
+            line-height: 1.3;
+        }
+        .organigrama-app label .cargos span {
+            font-weight: 100;
+            font-size: 11px;
+            padding-left: 17px;
+        }
+
+        .cargos {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 3px;
+        }
+
+        .organigrama-app label:before {
+            width: 1em;
+            height: 1em;
+            line-height: 1em;
+            display: inline-block;
+            font-family: 'Font Awesome 5 Free';
+            content: "\f0da";
+            padding-right: .75em;
+            font-weight: bold;
+            transition: 300ms all ease;
+        }
+        .organigrama-app .ultimo-item label:before {
+            font-family: 'Font Awesome 5 Free';
+            content: "\f111";
+            font-weight: bold;
+            font-size: 6px;
+            margin-right: 5px;
+            top: -3px!important;
+            transform: none!important;
+            position: relative;
+        }
+        .organigrama-app label:hover {
+            color: #434a58;
+            border-bottom-color: #6caae4;
+        }
+        .organigrama-app .organigrama-app_link a {
+            padding: 1.500em 1.125em 0.750em 0;
+            display: block;
+            border-radius: .2em;
+            color: #717780;
+            text-decoration: none;
+        }
+        .organigrama-app .organigrama-app_link a:hover {
+            color: #434a58;
+        }
+        .organigrama-app.nested {
+            padding-left: 1.7em;
+        }
+        .organigrama-app [type="checkbox"] {
+            display: none;
+        }
+        {# .organigrama-app [type="checkbox"]:checked + label {
+            color: #434a58;
+            border-bottom-color: #434a58;
+        } #}
+        .organigrama-app [type="checkbox"]:checked ~ ul > li {
+            height: auto;
+        }
+
+        .organigrama-app [type="checkbox"]:checked ~ label:before {
+            transform: rotate(90deg);
+            position: relative;
+            top: 5px;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .cargos {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .organigrama-wrapper {
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100%;
+            gap: 20px;
+        }
+        .organigrama-wrapper .buscar-exportar-wrapper .btn-exportar {
+            background: #4caf5052;
+            border: 0;
+            color: #43a847;
+            width: max-content;
+            padding: 10px 15px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-left: auto;
+            transition: 300ms all ease;
+        }
+        .organigrama-wrapper .buscar-exportar-wrapper .btn-exportar:hover {
+            background: #4caf506e;
+        }
+        .organigrama-wrapper > .organigrama {
+            overflow: auto;
+            padding-right: 10px;
+        }
+        .organigrama-wrapper .buscar-exportar-wrapper {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            column-gap: 10px;
+        }
+
+        .organigrama-wrapper .buscar-exportar-wrapper .buscar {
+            display: flex;
+            align-items: center;
+            padding: 5px 20px;
+            border: 1px solid #ddd;
+            border-radius: 7px;
+            color: #888;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .organigrama-wrapper .buscar-exportar-wrapper .buscar span {
+            margin-right: 10px;
+        }
+
+        .organigrama-wrapper .buscar-exportar-wrapper .buscar input {
+            border: none;
+            width: 100%;
+            text-transform: capitalize;
+        }
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.state = new function(){
+            const state = this;
+
+            state.arbol = {{arbol ? (arbol | json_encode | raw) : 'null'}};
+            state.partida = 1;
+            state.idRaiz = state.partida;
+
+            state.dom = {
+                organigrama: document.getElementById('organigrama')
+            }
+
+            state.nodoSeleccionado = (id, descripcion)=> {
+                   APP.parentState.setFondo(id, descripcion);
+            }    
+
+            state.generarOrganigrama = (idPartida) => {
+                state.idRaiz = idPartida;
+                let elementoInicial = state.arbol.find(e => e && e["estructura_fondo_id"] == idPartida);
+                                                
+                html  = `<ul id="compositions-list" class="organigrama-app main-tree">
+                            <li>
+                                <input onClick="APP.state.nodoSeleccionado(${elementoInicial.estructura_fondo_id},'${elementoInicial.descripcion}' )" type="checkbox" id="trigger-${elementoInicial.descripcion.toLowerCase().replaceAll(" ", "_")}" checked="checked">
+                                <label for="trigger-${elementoInicial.descripcion.toLowerCase().replaceAll(" ", "_")}">${elementoInicial.descripcion}<br>
+                                  
+                                </label>
+                                <ul class="organigrama-app">
+                                    ${state.generarRama(idPartida)}
+                                </ul>
+                            </li>
+                        </ul>`;
+                state.dom.organigrama.innerHTML = html;
+            }
+
+            state.generarRama = (id) => {
+                let arreglo = state.arbol.filter(e => e && e["padre_id"] == id);
+                if(arreglo.length <= 0) return '';
+                let interno = '';
+
+                arreglo.forEach(element => {
+                 
+                    let arregloActual = state.arbol.filter(e => e && e["padre_id"] == element.estructura_fondo_id);
+                    let clase = arregloActual.length <= 0 ? `class="ultimo-item"` : '';
+                    let rama = state.generarRama(element.estructura_fondo_id);
+                    interno += `<li ${clase}>
+                                    <input onClick="APP.state.nodoSeleccionado(${element.estructura_fondo_id},'${element.descripcion}')" type="checkbox" id="trigger-${element.descripcion.toLowerCase().replaceAll(" ", "_")}">
+                                    <label for="trigger-${element.descripcion.toLowerCase().replaceAll(" ", "_")}">${element.descripcion}<br>
+                                        
+                                    </label>
+                                    ${rama ? `<ul>${rama}</ul>` : ''}
+                                </li>`
+                })
+                return interno;
+            }
+
+            APP.ready(function () {
+                state.generarOrganigrama(state.partida);
+              
+            });
+        }
+    </script>
+{% endblock %}
+
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style=""> Seleccione el nodo donde quiere cargar el excel</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="organigrama-wrapper">
+        <div class="organigrama" id="organigrama"></div>
+    </div>
+{% endblock %}

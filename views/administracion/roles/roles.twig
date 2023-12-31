@@ -1,0 +1,185 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+        .estado {
+            display: grid;
+            {% if APP_permisos["Roles.Editar"] %}
+            grid-template-columns: 4fr 1fr;
+            {% else %}
+            grid-template-columns: 1fr;
+            {% endif %}
+        }
+        .accion-desactivar {
+            color: orangered;
+        }
+        .accion-activar {
+            color: mediumseagreen;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.roles = null;
+
+            APP.ready(() => {
+                state.roles = $("#roles").DataTable({
+                    titulo: 'ROLES',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/roles",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Roles.Detalle"] %}onclick="APP.state.detalleRol(${item.id})"{% endif %}`;
+                            let accionEstado = `{% if APP_permisos["Roles.Editar"] %}<div ${item.status == 'A'?'title="Desactivar" class="accion-desactivar"':'title="Activar" class="accion-activar"'} onclick="APP.state.cambiarEstadoRol(${item.id},'${item.status == 'A'?'I':'A'}')"><i class="${item.status == 'A'?'fas fa-times-circle':'fas fa-check-circle'}"></i></div>{% endif %}`;
+                            let accionPermisos = `{% if APP_permisos["Roles.Permisos"] %}onclick="APP.state.detalleRolPermisos(${item.id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Roles.Borrar"] %}onclick="APP.state.eliminarRol(${item.id})"{% endif %}`;
+                             return [
+                                `<div ${accionDetalle}>${item.key}</div>`,
+                                `<div ${accionDetalle}>${item.descripcion || '-'}</div>`,
+                                `<div class="estado"><div ${accionDetalle}><span ${item.status == 'A'?'class="badge badge-success">Activo':'class="badge badge-danger">Inactivo'}</span></div> ${accionEstado}</div>`,
+                                {% if APP_permisos["Roles.Permisos"] %}`<div ${accionPermisos} title="Editar Permisos"><i class="fas fa-key"></i></div>`{% endif %},
+                                {% if APP_permisos["Roles.Borrar"] %}`<div ${accionEliminar} title="Borrar Rol"><i class="fas fa-trash"></i></div>`{% endif %},
+                            ]; 
+
+                          
+                        }),
+                    }
+                });
+
+                state.roles.activarOrden("colNombre", {
+                    parametro: "key",
+                });
+                /*  state.roles.agregarAccion({
+                    icono: 'fa fa-list-ol',
+                    descripcion: 'Listar Todos',
+                    accion: () => {
+                        if (state.roles.page.len() > 0)
+                            state.roles.page.len(-1)
+                        else
+                            state.roles.page.len(50)
+                        state.roles.ajax.reload()
+                    }
+                }); */
+
+                {% if APP_permisos["Roles.Crear"] %}
+                state.roles.agregarAccion({
+                    descripcion: 'Agregar Rol',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/roles:nuevo",
+                            success: html => abrirModal(html, {
+                                onClose: () => {
+                                    state.roles.recargar();
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %}
+
+            });
+
+            {% if APP_permisos["Roles.Detalle"] %}
+            state.detalleRol = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/roles/${id}`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.roles.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Roles.Permisos"] %}
+            state.detalleRolPermisos = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/roles/${id}/permisos`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.roles.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Roles.Editar"] %}
+            state.cambiarEstadoRol = (id, estado) => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/roles/${id}`,
+                    type: 'PUT',
+                    data: {
+                        status: estado
+                    },
+                    success: response => {
+                        state.roles.recargar();
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Roles.Borrar"] %}
+            state.eliminarRol = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/roles/${id}`,
+                    type: 'delete',
+                    success: response => {
+                        state.roles.recargar();
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        });
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+        };
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="roles" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colNombre">NOMBRE</th>
+                            <th id="colDescripcion">DESCRIPCION</th>
+                            <th id="colEstado">ESTADO</th>
+                        {#     {% if APP_permisos["Roles.Permisos"] %} #}
+                            <th id="colPermisos">PERMISOS</th>
+                          {#   {% endif %}
+                            {% if APP_permisos["Roles.Borrar"] %} #}
+                            <th id="colEliminar">BORRAR</th>
+                           {#  {% endif %} #}
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

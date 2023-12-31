@@ -1,0 +1,8 @@
+/.vscode
+.gitattributes
+/log
+/public/uploads
+/uploads
+*.code-workspace
+/config/config.local.php
+

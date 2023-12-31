@@ -1,0 +1,251 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .div-espacios-fisicos {
+            width: 100%;
+            /max-width: 1000px;/
+        }
+
+        #entidad-espacios-fisicos .card .card-body {
+            font-size: 13px;
+            padding: 10px 20px;
+        }
+        #entidad-espacios-fisicos .card .card-body .card-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+
+        #entidad-espacios-fisicos .card .card-body .card-content .internos {
+            font-size: smaller;
+        }
+
+        #entidad-espacios-fisicos .card .card-body .card-content .borrar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #cecece;
+            border-radius: 50%;
+        }
+
+        .column-x3 {
+            grid-template-columns: 1fr 3fr;
+            grid-gap: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state.destino = new function () {
+            const parentState = APP.state;
+            const state = this;
+
+            state.destino = null;
+            state.autorizante = null;
+
+            state.dom = {
+                destino: document.getElementById('destino'),
+                destinoDatos: document.getElementById('destino-datos'),
+                autorizante: document.getElementById('autorizante'),
+            };
+
+            APP.ready(() => {
+                $(state.dom.destino).autocomplete({
+                    autoFocus: true,
+                    minLength: 2,
+                    source: function (request, response) {
+                        state.destino = null;
+                        state.dibujarDestinoDatos();
+
+                        $.post({
+                            url:`{{baseUrl}}/api/solicitudes/descripcionSearch`,
+                            dataType: 'json',
+                            data: { descripcion: state.dom.destino.value },
+                            success: response
+                        });
+                    },
+                    select: function (event, ui) {
+                        event.preventDefault();
+                        if (ui.item.value) {
+                            state.destino = {
+                                espacioFisicoID: ui.item.espacio_fisico_id,
+                                descripcion: ui.item.descripcion,
+                                descripcionCompleta: ui.item.descripcion_completa,
+                                telefonos: ui.item.telefonos,
+                                internos: ui.item.internos,
+                                edificio: ui.item.edificio,
+                                piso: ui.item.piso,
+                                oficina: ui.item.oficina
+                            };
+
+                            state.dom.destino.value = ui.item.descripcion_completa;
+                            state.dibujarDestinoDatos();
+                        }
+                    },
+                    response: function(event, ui) {
+                        if (!ui.content.length) {
+                            const noResult = { value: "", label: "No se encontraron resultados" };
+                            ui.content.push(noResult);
+                        }
+                    }
+                }).autocomplete("instance")._renderItem = function(ul, item) {
+                    if (item.value) {
+                        let el = $(`
+                            <div class="list_item_container mb-2">
+                                <div class="tel">
+                                    <h4><b>${item.descripcion}</b></h4>
+                                    <p>${item.edificio || ''} - ${item.piso || ''} - OFICINA: ${item.oficina || ''}</p>
+                                    <div class="d-flex">
+                                        <span>Teléfonos: ${item.telefonos || ''}</span>
+                                        <span class="ml-3">(${item.internos || ''})</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                        return $("<li>").append(el).appendTo(ul);
+                    } else {
+                        let el = $(`
+                            <div class="list_item_container mb-2">
+                                <p>${item.label}</p>
+                            </div>
+                        `);
+                        return $("<li>").append(el).appendTo(ul);
+                    }
+                };
+
+                $(state.dom.autorizante).autocomplete({
+                    autoFocus: true,
+                    minLength: 2,
+                    source: function (request, response) {
+                        state.autorizante = null;
+
+                        $.post({
+                            url:`{{baseUrl}}/filtros/empleados/empleado`,
+                            dataType: 'json',
+                            data: { descripcion: state.dom.autorizante.value},
+                            success: response
+                        });
+                    },
+                    select: function (event, ui) {
+                        event.preventDefault();
+                        state.autorizante = { autorizanteID: ui.item.id, descripcion: ui.item.value };
+                        state.dom.autorizante.value = ui.item.value;
+                    }
+                });
+
+                state.dibujarDestinoDatos = () => {
+                    state.dom.destinoDatos.innerHTML = '';
+                    let html = '';
+
+                    if (state.destino) {
+                        html += `
+                            <div class="card mt-1">
+                                <div class="card-body">
+                                    <div class="card-content">
+                                        <div>
+                                            <div><b>${state.destino.descripcion || '-'}</b></div>
+                                            <div><p>${state.destino.edificio || ''} - ${state.destino.piso || ''} - OFICINA: ${state.destino.oficina || ''}</p></div>
+                                            <hr class="mt-3 mb-3">
+                                            <div class="internos">
+                                                <div class="">Teléfonos: ${state.destino.telefonos || '-'}</div>
+                                                <div class="">Internos: ${state.destino.internos || '-'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    state.dom.destinoDatos.innerHTML = html;
+                }
+
+                state.agregarDestino = () => {
+                    if(parentState.visita.visitaID) return;
+                    if (!state.destino) { swal('EL DESTINO INGRESADO ES INVALIDO'); return; };
+                    if (!state.autorizante ) { swal('EL AUTORIZANTE INGRESADO ES INVALIDO'); return; };
+
+                    parentState.visita.destino = {
+                        espacioFisicoID: state.destino.espacioFisicoID,
+                        descripcion: state.destino.descripcion,
+                        descripcionCompleta: state.destino.descripcionCompleta,
+                        telefonos: state.destino.telefonos,
+                        internos: state.destino.internos,
+                        edificio: state.destino.edificio,
+                        piso: state.destino.piso,
+                        oficina: state.destino.oficina,
+                        autorizante: state.autorizante.descripcion,
+                        autorizanteID: state.autorizante.autorizanteID,
+                    };
+
+                    setTimeout(()=>{
+                        parentState.dibujarResumen();
+                        parentState.cambiarTab('nav-visitante');
+
+                    }, 200);
+                }
+
+                state.borrarDestino = () => {
+                    if(parentState.visita.visitaID) return;
+                    parentState.visita.destino = null;
+                    setTimeout(()=>{
+                        parentState.dibujarResumen();
+
+                        state.destino = null;
+                        state.autorizante = null;
+                        state.dom.destino.value = '';
+                        state.dom.autorizante.value = '';
+                        state.dibujarDestinoDatos();
+                        parentState.cambiarTab('nav-destino');
+                    }, 200);
+                }
+            });
+
+        };
+    </script>
+{% endblock %}
+
+{% block body %}
+    <div class="destino-content">
+        <form id="form-destino" novalidate>
+            <div class="auto-columns">
+                <div class="mb-3">
+                    <div id="div-busqueda" class="mb-4">
+                        <div class="d-flex">
+                            <div class="w-full">
+                                <label class="label">
+                                    <span class="label-text">Destino</span>
+                                </label>
+                                <input type="search" class="input input-bordered w-full" id="destino" name="destino" autocomplete="off" placeholder="Ingrese destino a buscar...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="destino-datos" class="mb-4"></div>
+                </div>
+            </div>
+
+            <div class="auto-columns mb-3">
+                <div id="div-autorizante" class="mb-4">
+                    <div class="d-flex">
+                        <div class="w-full">
+                            <label class="label">
+                                <span class="label-text">Autorizante</span>
+                            </label>
+                            <input type="search" class="input input-bordered w-full" id="autorizante" name="autorizante" autocomplete="off" placeholder="Ingrese Autorizante a buscar...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="footer">
+        <button id="btnAgregarDestino" class="btn btn-primary w-full items-center" type="button" onclick="APP.state.destino.agregarDestino()" title="Agregar destino">Agregar Destino</button>
+    </div>
+{% endblock %}

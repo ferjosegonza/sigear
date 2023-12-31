@@ -1,0 +1,43 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .img-wrapper {
+            padding: 2rem;
+        }
+        .img-modal {
+            max-height: 500px;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+<script>/*
+    APP.state = new function () {
+        const state = this;
+        const solicitud = {{solicitud ? (solicitud | json_encode | raw) : 'null'}};
+
+    } */
+
+</script>
+{% endblock %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">DOCUMENTACION</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block appBody %}
+    <h3 class="text-center mt-3">IMAGEN: {{image_nombre}}</h3>
+    <div class="img-wrapper">
+        <img class="img-modal" src="data:image/jpeg;base64,{{urlIframe}}" height="500px" width="100%" style="border: 0;" type:"application/jpg">
+
+    </div>
+{% endblock %}

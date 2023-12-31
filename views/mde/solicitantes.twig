@@ -1,0 +1,140 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.solicitantes = null;
+
+            APP.ready(() => {
+                state.solicitantes = $("#solicitantes").DataTable({
+                    titulo: 'SOLICITANTES',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/solicitantes",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Solicitante.Detalle"] %}onclick="APP.state.detalleSolicitantes(${item.solicitante_id})"{% endif %}`;
+                            // let accionEliminar = `{% if APP_permisos["Solicitante.Borrar"] %}onclick="APP.state.eliminarSolicitante(${item.solicitante_id}, ${item.id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Solicitante.Borrar"] %}onclick="APP.state.eliminarSolicitante(${item.solicitante_id}, '${item.nombres}', '${item.apellidos}')"{% endif %}`;
+
+                            let accionColumna = `{% if APP_permisos["Solicitante.Columnas"] %}onclick="APP.state.detalleSolicitantes(${item.solicitante_id})"{% endif %}`;
+                            return [
+                                `<div ${accionDetalle}>${item.solicitante_id}</div>`,
+                                `<div ${accionDetalle}>${item.nombres}</div>`,
+                                `<div ${accionDetalle}>${item.apellidos}</div>`,
+                                `<div ${accionDetalle}>${item.documento}</div>`,
+                                `<div ${accionDetalle}>${item.telefono}</div>`,
+                                `<div ${accionDetalle}>${item.email}</div>`,
+                              /*  `<div ${accionDetalle}>${item.descripcion}</div>`,*/
+                                {% if APP_permisos["Solicitante.Borrar"] %}`<div ${accionEliminar} title="Borrar Solicitante"><i class="fas fa-trash"></i></div>`{% endif %},
+
+                                ];
+                            }),
+                    }
+                });
+
+                {% if APP_permisos["Solicitante.Crear"] %}
+                state.solicitantes.agregarAccion({
+                    descripcion: 'Agregar Solicitantes',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/solicitantes:nuevo",
+                            success: html => abrirModal(html, {
+                                onClose: () => {
+                                    state.solicitantes.recargar(); 
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %} 
+
+            });
+
+            {% if APP_permisos["Solicitante.Detalle"] %}
+            state.detalleSolicitantes = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/solicitantes/${id}`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.solicitantes.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Solicitante.Borrar"] %}
+            state.eliminarSolicitante = (id, nombre, apellido) => {
+                const nombreCompleto = `${nombre} ${apellido}`;
+                swal({
+                    title: `¿Está seguro que desea eliminar a ${nombreCompleto}?`,
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true,
+                })
+                .then((confirmacion) => {
+                    if (confirmacion) {
+                        $.ajax({
+                            url: `{{ baseUrl }}/api/solicitantes/${id}`,
+                            type: 'delete',
+                            success: response => {
+                                state.solicitantes.recargar();
+                                swal({
+                                    icon: "success",
+                                    text: "Se eliminó correctamente",
+                                    buttons:[false,'Aceptar']
+                                });
+                            },
+                            error: swalError
+                        });
+                    }
+                });
+            }
+            {% endif %}
+        };
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="solicitantes" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colSolicitante_id">ID</th> 
+                            <th id="colNombre">NOMBRES</th>
+                            <th id="colApellido">APELLIDOS</th>
+                            <th id="colDocumento">DOCUMENTO</th>
+                            <th id="colTelefono">TELÉFONO</th>
+                            <th id="colEmail">EMAIL</th>
+
+                            {% if APP_permisos["Solicitante.Borrar"] %}
+                                <th id="colEliminar"></th>
+                            {%endif%} 
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+       </div>
+{% endblock %}

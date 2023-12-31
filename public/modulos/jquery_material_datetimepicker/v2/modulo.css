@@ -1,0 +1,33 @@
+.dtp {
+    z-index: 200000;
+}
+.dtp div.dtp-date,
+.dtp div.dtp-time,
+.dtp > .dtp-content > .dtp-date-view > header.dtp-header,
+.dtp table.dtp-picker-days tr > td > a.selected,
+.dtp .dtp-actual-meridien a.selected {
+    background: #6CAAE4;
+}
+header.dtp-header {
+    text-transform: uppercase;
+}
+.dtp a.dtp-meridien-am,
+.dtp a.dtp-meridien-pm {
+    padding: 0.7em 0.7em;
+}
+.dtp .p10 > a,
+.dtp div.dtp-actual-year,
+button.dtp-btn-ok.btn.btn-flat,
+button.dtp-btn-cancel.btn.btn-flat {
+    color: #ffffff;
+}
+.dtp table.dtp-picker-days tr > th {
+    color: white;
+    text-transform:uppercase;
+}
+.dtp > .dtp-content > .dtp-date-view > header.dtp-header {
+    background: #4c7ca9;
+}
+.dtp.btn.btn-success {
+    border-radius: 0;
+}

@@ -1,0 +1,75 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.SCHEMA_INFORME = yup.object().shape({
+                titulo: yup.string().required("Debe ingresar un titulo").max(50).label('Título'),
+                solicitud: yup.string().required("El id de solicitud es requerido").max(100).label('Solicitud'),
+            });
+
+            const guardar = formData => {
+
+                $.ajax({
+                    url: `{{baseUrl}}/api/informes`,
+                    type: 'POST',
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+
+            }
+
+            document.getElementById("formInforme").addEventListener('submit', e=>{validarFormularioConYup({event: e, schema: APP.state.SCHEMA_INFORME, onValidate: guardar, onError: console.dir})});
+
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <form id="formInforme" novalidate>
+                <input type="hidden" class="input input-bordered w-full" name="solicitud" autocomplete="off" value="{{solicitudID}}" required>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Título</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="titulo" autocomplete="off" value="" required>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    <button class="btn btn-success" form="formInforme" type="submit" title="CREAR INFORME">CREAR</button>
+{% endblock %}
+

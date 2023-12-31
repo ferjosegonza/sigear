@@ -1,0 +1,182 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+    /*    .estado {
+            display: grid;
+            {% if APP_permisos["Fondos.Editar"] %}
+            grid-template-columns: 4fr 1fr;
+            {% else %}
+            grid-template-columns: 1fr;
+            {% endif %}
+        }
+        .accion-desactivar {
+            color: orangered;
+        }
+        .accion-activar { 
+            color: mediumseagreen;
+        }
+        .colAsunto {
+        max-width: 300px;
+        word-break: break-word;
+        display: table-cell;
+        }*/
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+        let subFondoVariableGlobal = null;
+
+        APP.state = new function () {
+            const state = this;
+
+            state.repositorio = null;
+            const fondosRepo = {{fondosRepo ? (fondosRepo | json_encode | raw) : 'null'}};       
+
+            state.importarExcelNew = (informeID) => {
+                $.ajax({
+                    url: `{{ baseUrl }}/fondos/fondosExcel`,
+                    type: 'GET',
+                    data: {},
+                    success: html => abrirDetalle(html, {
+                        onClose: () => {
+                            state.repositorio.recargar();
+                            cerrarModal();
+                        } 
+                    }),
+                    error: swalError
+                });
+            }
+      
+
+            state.showGaleria = (repositorioID) => {
+                $.ajax({
+                    url: `{{ baseUrl }}/fondos/mostrarGaleria/${repositorioID}`,
+                    type: 'GET',
+                    data: {
+                        repositorioID: repositorioID,
+                        pagina: 1,
+                    },
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            cerrarModal
+                            state.repositorio.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+
+            APP.ready(() => {
+                state.repositorio = $("#repositorio").DataTable({
+                    titulo: 'REPOSITORIO',
+                    searching: true,
+                    responsive:  true,
+                    fixedHeader: true,
+                   // ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/fondos/repositorio",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            //let accionDetalle = `{% if APP_permisos["Solicitudes.Detalle"] %}onclick="APP.state.detalleRepositorio(${item.repositorio_id})"{% endif %}`;
+                            let accionDetalle = `onclick="APP.state.detalleRepositorio(${item.repositorio_id})"`;
+                            return [
+                                `<div ${accionDetalle}>${item.repositorio_id}</div>`,
+                                `<div ${accionDetalle}>${item.fondo_nombre}</div>`,
+                                `<div ${accionDetalle}>${item.nodo_detalle}</div>`,
+                                `<div ${accionDetalle}>${item.apellido}</div>`,
+                                `<div ${accionDetalle} class="colAsunto">${item.asunto_grilla}</div>`,
+                                `<div ${accionDetalle}>${item.fecha}</div>`,
+                                `<div ${accionDetalle}>${item.seccion_mesa}</div>`,
+                                `<div ${accionDetalle}>${item.legajo}</div>`,
+                                `<div ${accionDetalle}>${item.observacion_archivista}</div>`,
+                                `<div ${accionDetalle}>${item.ocr ? `<a href="#" style="color: green;" onclick="APP.state.showGaleria('${item.repositorio_id}')">VER</a>` : `<span style="color: orange;">PROCESANDO</span>`}</div>`,
+                                /*`<div>`,
+                                {% if item.ocr %}
+                                    `<a href="#" style="color: green;" onclick="APP.state.showGaleria('${item.repositorio_id}')">VER</a>`
+                                {% else %}
+                                    `<span style="color: yellow;">PROCESANDO</span>`
+                                {% endif %}
+                                `</div>`,*/
+                            ];
+                        }),
+                    }
+                });
+
+                state.repositorio.activarFiltro("COLFonDo", {
+                    parametro: "fondo_nombre",
+                    select: "{{baseUrl}}/filtros/fondos/fondoNombre",
+                });
+
+                state.repositorio.activarFiltro("ColApellido", {
+                    parametro: "apellido",
+                    autocompletar: "{{baseUrl}}/filtros/fondos/apellido",
+                });
+
+                state.repositorio.activarFiltro("ColAsunto", {
+                    parametro: "asunto",
+                    autocompletar: "{{baseUrl}}/filtros/fondos/asunto",
+                });
+
+               state.repositorio.activarFiltro("nodo_arbol_id", {
+                    parametro: "nodo_detalle",
+                    autocompletar: "{{baseUrl}}/filtros/fondos/nodoArbol",
+                });
+
+
+            });
+            /*{% if APP_permisos["Solicitudes.Detalle"] %}*/
+            state.detalleRepositorio = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/fondos/detalleRepositorio/${id}`,
+                    success: html => abrirDetalle(html, {
+                        onClose: () => {
+                            // cerrarModal();
+                            state.repositorio.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            /*{% endif %}*/
+        }
+
+ 
+
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content" style="overflow-x: auto;">
+
+                <button id= "botonmportarExceNew" class="btn btn-success" onclick="APP.state.importarExcelNew()">Importar Excel</button>
+                <input id="idExcel" value= '' type="hidden"> 
+
+                <table id="repositorio" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                          <th id="COLid">ID</th>
+                            <th id="COLFonDo">FONDO</th>
+                            <th id="nodo_arbol_id">NODO ARBOL</th>
+                            <th id="ColApellido"> APELLIDO Y NOMBRE</th>
+                            <th id="ColAsunto" class="colAsunto">ASUNTO</th>
+                            <th id="colFecha_ing">FECHA_INGRESO</th>
+                            <th id="colProcedencia">SECCION/MESA</th>
+                            <th id="colProcedencia">LEGAJO</th>
+                            <th id="colObservacionArchivista">OBSERVACION ARCHIVISTA</th>
+                            <th id="ocr">OCR</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

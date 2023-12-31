@@ -1,0 +1,37 @@
+{% extends 'layout.twig' %}
+{% block body %}
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        {% for log in logs %}
+          <h4 class="alert {{ log.level_name|alertClass }}">
+            <i class="fa {{ log.level_name|alertIconClass }}"></i> {{ log.level_name }}:
+            {{ log.message|slice(0, 50) }}
+            <small>
+              {{ (log.datetime.date ~ ' ' ~ log.datetime.timezone)|ago }}
+              | {{ log.extra.uid }}
+            </small>
+          </h4>
+
+          <dl class="row">
+            <dt class="col-md-2">Support Code:</dt>
+            <dd class="col-md-10"><code>{{ log.extra.uid }}</code></dd>
+            <dt class="col-md-2">Date:</dt>
+            <dd class="col-md-10">
+              <pre>{{ log.datetime.date|ago ~ "\n" }}{{ log.datetime.date }} {{ log.datetime.timezone ~ "\n" }}{{ (log.datetime.date ~ ' ' ~ log.datetime.timezone)|date('Y-m-d H:i:s.u T', 'America/Toronto') }}</pre>
+            </dd>
+            <dt class="col-md-2">Message:</dt>
+            <dd class="col-md-10"><pre>{{ log.message }}</pre></dd>
+
+            {% if log.context %}
+              {% for key, value in log.context %}
+                <dt class="col-md-2">{{ key|capitalize }}:</dt>
+                <dd class="col-md-10"><pre style="{{ key == 'trace' ? 'font-size:11px;' }}">{{ value }}</pre></dd>
+              {% endfor %}
+            {% endif %}
+          </dl>
+        {% endfor %}
+      </div>
+    </div>
+</div>
+{% endblock %}

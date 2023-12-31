@@ -1,0 +1,709 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .app-layout.with-padding > .layout__body {
+            padding: 0;
+        }
+        .historico-container {
+            font-size: 13px;
+        }
+
+        .historico-container > h3,
+        #persona_buscada > h3 {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: #ddd;
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        .div-espacios-fisicos {
+            width: 100%;
+        }
+
+        .auto-columns {
+                align-items: end;
+        }
+
+        #entidad-espacios-fisicos .card .card-body {
+            font-size: 13px;
+            padding: 10px 20px;
+        }
+        #entidad-espacios-fisicos .card .card-body .card-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+
+        #entidad-espacios-fisicos .card .card-body .card-content .internos {
+            font-size: smaller;
+        }
+
+        #entidad-espacios-fisicos .card .card-body .card-content .borrar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #cecece;
+            border-radius: 50%;
+        }
+
+        .column-x3 {
+            grid-template-columns: 1fr 3fr;
+            grid-gap: 10px;
+        }
+
+        .historico-container table tr td {
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .modal-body {
+            overflow: auto;
+        }
+
+        #formsolicitudes {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            height: 100%;
+            overflow: hidden;
+            column-gap: 20px;
+        }
+
+        #formsolicitudes > .info {
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        #formsolicitudes > aside {
+            width: 300px;
+            background: #f3f3f3;
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        #formsolicitudes > aside ul > li {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            padding: 10px 5px;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            font-size: 1.4rem;
+            line-height: 1.3;
+        }
+
+        #formsolicitudes > aside ul > li:hover {
+            background: #e9e9e9;
+        }
+
+        #formsolicitudes > aside ul > li a {
+            text-decoration: none;
+            font-size: small;
+        }
+        #formsolicitudes > aside ul > li a:hover {
+            color: currentColor;
+        }
+
+        #formsolicitudes > aside ul > li i:hover {
+            color: #f53838;
+        }
+
+        #formsolicitudes > .solicitudes-wrapper {
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        aside ul#informes-list > li {
+            grid-template-columns: 1fr auto auto auto;
+            grid-column-gap: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+        APP.state = new function () {
+            const parentState = APP.state;
+            const state = this;
+            state.archivos = [];
+            state.auto_solicitante = null;
+            state.dom = {
+                auto_solicitante: document.getElementById('auto_solicitante'),
+            };
+            const solicitud = {{solicitud ? (solicitud | json_encode | raw) : 'null'}};
+            const lista_solicitantes = {{lista_solicitantes ? (lista_solicitantes | json_encode | raw) : 'null'}};
+            const lista_instituciones = {{lista_instituciones ? (lista_instituciones | json_encode | raw) : 'null'}};
+            const lista_estados = {{lista_estados ? (lista_estados | json_encode | raw) : 'null'}};
+            const lista_vinculos = {{lista_vinculos ? (lista_vinculos | json_encode | raw) : 'null'}};
+            const lista_personal = {{lista_personal ? (lista_personal | json_encode | raw) : 'null'}};
+            const lista_tipo_solicitudes = {{lista_tipo_solicitudes ? (lista_tipo_solicitudes | json_encode | raw) : 'null'}};
+            const historicos = {{historicos ? (historicos | json_encode | raw) : 'null'}};
+            const adjuntos = {{adjuntos ? (adjuntos | json_encode | raw) : 'null'}};
+            const lista_documentacion_solicitada = {{lista_documentacion_solicitada ? (lista_documentacion_solicitada | json_encode | raw) : 'null'}};
+            const listar_nacionalidad = {{listar_nacionalidad ? (listar_nacionalidad | json_encode | raw) : 'null'}};
+
+            state.SCHEMA_SOLICITUD_PERSONAL = yup.object().shape({
+                solicitante_id:yup.string().required("Debe seleccionar un Solicitante"),
+                auto_solicitante: yup.string().required("Debe elegir un Solicitante o agregue uno nuevo.").max(60).label('ID Solicitante'),
+                institucion: yup.string().max(60).label('Institucion'), 
+                buscada_nombre: yup.string().max(100).label('Nombre buscado').matches(/^[a-zA-Z\s]*$/, "Para nombre ingresar sólo letras y espacios."),
+                buscada_apellido: yup.string().max(100).label('Apellido buscado').matches(/^[a-zA-Z\s]*$/, "Para apellido ingresar sólo letras y espacios."),
+                buscada_dni: yup.string().max(8).label('DNI').matches(/^[0-9]*$/, "Para DNI ingresar sólo números."),
+                vinculo_id: yup.string().label('Vinculo'),
+                numero_ley: yup.string().label('Número de ley'),
+                numero_tramite: yup.string().label('Número de trámite'),
+                observaciones: yup.string().max(250).label('Observaciones'),
+                tiene_info: yup.string().label('Tiene información'),
+                periodo_camara: yup.string().label('Período Cámara'),
+                doc_solicita: yup.string().label('Documentación que solicita'),
+                tipo_doc: yup.string().label('Tipo de documentación solicitada'),
+            });
+
+            state.SCHEMA_SOLICITUD_TEMATICA = yup.object().shape({
+                solicitante_id:yup.string().required("Debe seleccionar un Solicitante"),
+                auto_solicitante: yup.string().required("Debe elegir un Solicitante o agregue uno nuevo.").max(60).label('ID Solicitante'),
+                institucion: yup.string().max(60).label('Institucion'), 
+                buscada_nombre: yup.string().max(100).label('Nombre buscado').matches(/^[a-zA-Z\s]*$/, "Para nombre ingresar sólo letras y espacios."),
+                buscada_apellido: yup.string().max(100).label('Apellido buscado').matches(/^[a-zA-Z\s]*$/, "Para apellido ingresar sólo letras y espacios."),
+                buscada_dni: yup.string().max(8).label('DNI').matches(/^[0-9]*$/, "Para DNI ingresar sólo números."),
+                vinculo_id: yup.string().label('Vinculo'),
+                numero_ley: yup.string().label('Número de ley'),
+                numero_tramite: yup.string().label('Número de trámite'),
+                observaciones: yup.string().max(250).label('Observaciones'),
+                tiene_info: yup.string().label('Tiene información'),
+                periodo_camara: yup.string().label('Período Cámara'),
+                doc_solicita: yup.string().label('Documentación que solicita'),
+                tipo_doc: yup.string().label('Tipo de documentación solicitada'),
+            });
+
+            const guardarSolicitud = formData => {
+                let data = new FormData();
+                Object.entries(formData.data).forEach((e)=>{
+                    data.append(e[0],e[1]);
+                });
+                state.archivos.forEach((e, i)=>{
+                    data.append("file-" + i, e);
+                });
+
+                /* state.archivos.forEach((e, i)=>{
+                    let fileContainer = document.createElement('div');
+                    fileContainer.innerHTML = `<span>${e.name}</span>`;
+                    let deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteButton.addEventListener('click', () => {
+                        state.archivos.splice(i, 1);
+                        fileContainer.remove();
+                        deleteButton.remove();
+                    });
+                    fileContainer.appendChild(deleteButton);
+                    data.append("file-" + i, e);
+                    document.getElementById('file-list').appendChild(fileContainer);
+                }); */
+
+
+                $.ajax({
+                    url: `{{baseUrl}}/api/solicitudes{% if solicitud %}/{{solicitud.solicitud_id}}{% endif %}`,
+                    method: 'POST',
+                    data: data,
+                    processData: false,
+                    contentType: false,
+                    enctype: 'multipart/form-data',
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se ha guardado correctamente"
+                        }).then(value => {
+                            cerrarDetalle();
+                        });
+                    },
+                    error: swalError
+                });
+            };
+
+            $(state.dom.auto_solicitante).autocomplete({
+                autoFocus: true,
+                minLength: 1,
+                source: function (request, response) {
+                    state.auto_solicitante = {};
+
+                    $.post({
+                        url:`{{baseUrl}}/api/solicitudes/auto_solicitante`,
+                        dataType: 'json',
+                        data: {
+                            descripcion: state.dom.auto_solicitante.value,
+                            nombre_completo: request.term,
+                            auto_solicitante_id: state.auto_solicitante.auto_solicitanteID
+                        },
+                        success: response
+                    });
+                },
+                select: function (event, ui) {
+                    event.preventDefault();
+                    state.auto_solicitante = { auto_solicitanteID: ui.item.id, descripcion: ui.item.value };
+                    state.dom.auto_solicitante.value = ui.item.value;
+                    document.querySelector("input[name='solicitante_id']").value = state.auto_solicitante.auto_solicitanteID;
+                }
+            });
+
+            document.getElementById("formsolicitudes").addEventListener('submit', e=>{
+                let tipo_solicitud_id = document.getElementById('tipo_solicitud_id').value;
+                if (tipo_solicitud_id === '2') {
+                    validarFormularioConYup({event: e, schema: APP.state.SCHEMA_SOLICITUD_TEMATICA, onValidate: guardarSolicitud.bind(state), onError: console.dir})
+                } else if (tipo_solicitud_id === '1') {
+                    validarFormularioConYup({event: e, schema: APP.state.SCHEMA_SOLICITUD_PERSONAL, onValidate: guardarSolicitud.bind(state), onError: console.dir})
+                }
+            });
+        };
+
+        var select = document.getElementById("tipo_solicitud_id");
+
+        function setDefaultValues() {
+        var selectedOption = select.options[select.selectedIndex];
+        let tipo_solicitud_id = selectedOption;
+        document.getElementById('institucion_id').disabled = selectedOption.value === '1';
+        document.getElementById('vinculo_id').disabled = selectedOption.value === '2';
+        document.getElementById('numero_ley').disabled = selectedOption.value === '1';
+        document.getElementById('numero_tramite').disabled = selectedOption.value === '1';
+        document.getElementById('tiene_info').disabled = selectedOption.value === '2';
+        document.getElementById('doc_solicita').disabled = selectedOption.value === '1';
+        document.getElementById('tipo_doc').disabled = selectedOption.value === '1';
+        }
+
+        // Llamada a la función setDefaultValues cuando se carga la página
+        setDefaultValues();
+
+        select.addEventListener("change", function(){
+        setDefaultValues();
+        });
+
+        document.getElementById('agregar-solicitante').addEventListener('click', function() {
+            $.ajax({
+                url: "{{ baseUrl }}/solicitantes:nuevo",
+                success: html => abrirModal(html, {}),
+                error: swalError
+            });
+        });
+
+        document.getElementById('adjuntar-archivos').addEventListener('click', function() {
+            $.ajax({
+                url: "{{ baseUrl }}/solicitud-adjuntos:nuevo",
+                success: html => abrirModal(html, {}),
+                error: swalError
+            });
+        });
+
+        document.getElementById('agregar-informe').addEventListener('click', function() {
+            swal({
+                title: `¿Está seguro que desea crear un nuevo Informe`,
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            })
+            .then((confirmacion) => {
+                if (confirmacion) {
+                    $.ajax({
+                        url: "{{ baseUrl }}/informes:nuevo",
+                        data: {'solicitudID' : '{{ solicitud.solicitud_id }}'},
+                        success: html => abrirModal(html, {
+                            onClose: () => {
+                                updateInformes({{ solicitud.solicitud_id }}); 
+                            }
+                        }),
+                        error: swalError
+                    });
+                }
+            });
+            
+        });
+
+        function updateInformes(solicitudID){
+            $.ajax({
+                url: "{{ baseUrl }}/api/informes",
+                type: 'GET',
+                data: { 'filtros' : {'id_solicitud' : solicitudID} },
+                success: data => {
+                    var informesList = document.getElementById('informes-list');
+                    informesList.innerHTML = "";
+                    var liHtml = ``;
+                    data.data.forEach(function(item){
+                        liHtml += `<li id="informe-${item.informe_id}">
+                                      ${item.descripcion}
+                                      <i class="fas fa-file" title="Confeccionar" onclick="confeccionarInforme(${item.informe_id})"></i>
+                                      <i class="fas fa-edit" title="Editar" onclick="editarInforme(${item.informe_id})"></i>
+                                      <i class="fas fa-trash" title="Eliminar" onclick="eliminarInforme(${item.informe_id})"></i>
+                                  </li>`;
+                    });
+                    informesList.innerHTML = liHtml;  
+                    return
+                },
+                error: swalError
+            });
+        }
+
+        function confeccionarInforme(informeID){
+            $.ajax({
+                url: `{{ baseUrl }}/informes/${informeID}/confeccionar`,
+                type: 'GET',
+                data: {},
+                success: html => abrirDetalle(html, {
+                    onClose: () => {
+                    }
+                }),
+                error: swalError
+            });
+        }
+
+        function editarInforme(informeID){
+            $.ajax({
+                url: "{{ baseUrl }}/informes/"+informeID,
+                type: 'GET',
+                data: {},
+                success: html => abrirModal(html, {
+                    onClose: () => {
+                        updateInformes({{ solicitud.solicitud_id }}); 
+                    }
+                }),
+                error: swalError
+            });
+        }
+
+        function eliminarInforme(informeID){
+            swal({
+                title: `¿Está seguro que desea eliminar el informe?`,
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            })
+            .then((confirmacion) => {
+                if (confirmacion) {
+                    $.ajax({
+                        url: `{{ baseUrl }}/api/informes/${informeID}`,
+                        type: 'DELETE',
+                        data: { 'informeID' : informeID},
+                        success: json => {
+                            document.getElementById('informe-'+informeID).style.display = 'none';
+                            return
+                        },
+                        error: swalError
+                    });
+                }
+            });
+            
+        }
+
+        function accionEliminarAdjunto(id_adjunto, documento, id_solicitud){
+            swal({
+                    title: `¿Está seguro que desea eliminar el documento ${documento}?`,
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true,
+                })
+                .then((confirmacion) => {
+                    if (confirmacion) {
+                        $.ajax({
+                            url: `{{ baseUrl }}/api/solicitud-adjuntos/${id_adjunto}`,
+                            type: 'delete',
+                            success: html => {
+                                swal({
+                                    icon: "success",
+                                    text: "Se eliminó correctamente",
+                                    buttons:[false,'Aceptar']
+                                })
+                                .then(()=>{
+                                    let element = document.getElementById(`adjunto-${id_adjunto}`);
+                                    element.parentNode.removeChild(element);
+                                })
+                            },
+                            error: swalError
+                        });
+                    }
+                });
+            // state.detalleSolicitudes.recargar();
+        }
+
+        function mostrarArchivo(adjuntoID, documento, id_solicitud){
+            $.ajax({
+                    url: `{{ baseUrl }}/mostrarArchivo/${adjuntoID}`,
+                    // url: `{{ baseUrl }}/mostrarArchivo/${adjuntoID}?documento=${documento}&id_solicitud=${id_solicitud}`,
+                    data: {
+                        adjuntoID: adjuntoID,
+                        documento: documento,
+                        id_solicitud: id_solicitud
+                    },
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            // cerrarModal();
+                        }
+                    }),
+                    error: swalError
+                });
+        }
+
+    /*   function validarFormulario() {
+            const autoSolicitanteInput = document.getElementById('auto_solicitante');
+            const solicitanteIdInput = document.querySelector("input[name='solicitante_id']");
+
+            if (autoSolicitanteInput.value.trim() === '' || solicitanteIdInput.value.trim() === '') {
+                // Mostrar un mensaje de error o tomar la acción que desees
+               // alert('Debe elegir un solicitante de la lista antes de enviar el formulario.');
+                 swal('Debe elegir un solicitante de la lista antes de enviar el formulario');
+
+
+                return false;
+            }
+
+            // Obtener la lista de solicitantes disponibles
+            const listaSolicitantes = {{ lista_solicitantes ? (lista_solicitantes | json_encode | raw) : 'null' }};
+
+            // Verificar si el ID del solicitante seleccionado existe en la lista
+            const solicitanteId = solicitanteIdInput.value.trim();
+            const solicitanteExistente = listaSolicitantes.find(solicitante => solicitante.id === solicitanteId);
+
+            if (!solicitanteExistente) {
+                // Mostrar un mensaje de error o tomar la acción que desees
+                alert('El solicitante seleccionado no es válido. Por favor, elija uno de la lista.');
+                return false;
+            }
+
+            return true;
+        }*/
+
+    </script>
+{% endblock %}
+
+{% block modalBody %}
+
+  <!--  <form id="formsolicitudes" novalidate onsubmit="return validarFormulario()">-->
+    {% if solicitud %}
+        MODIFICAR SOLICITANTE: {{ solicitud.id_documentacion_solicitada }}
+        {# Tipo de dato de id_documentacion_solicitada: {{ solicitud.id_documentacion_solicitada | type }} #}
+    {% else %}
+        solicitud.id_documentacion_solicitada no está definido
+    {% endif %}
+
+       <form id="formsolicitudes" novalidate>
+        <div class="info">
+            <div class="text-right mb-2">
+                <button type="button" class="btn btn-success btn-sm ml-2 pl-3 pr-3 gap-2" id="agregar-solicitante">
+                    <i class="fas fa-plus"></i> AGREGAR SOLICITANTE
+                </button>
+            </div>
+            <div class="auto-columns mb-3">
+                <div>
+                    <label class="label">TIPO DE SOLICITUD</label>
+                    <select class="select select-bordered w-full" name="tipo_solicitud_id" id="tipo_solicitud_id" {% if solicitud %} disabled='true'{% endif %}>
+                        {% for tipo_solicitud in lista_tipo_solicitudes %}
+                            <option value="{{tipo_solicitud.tipo_solicitudes_id}}" {% if tipo_solicitud.tipo_solicitudes_id == solicitud.tipo_solicitud_id %}selected{% endif %} {% if tipo_solicitud.tipo_solicitudes_id == '1' %}selected{% endif %}>{{tipo_solicitud.descripcion}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="div-busqueda">
+                    <label class="label">
+                        <span class="label-text">SOLICITANTE</span>
+                    </label>
+                    <input type="search" class="input input-bordered w-full" id="auto_solicitante" name="auto_solicitante" autocomplete="off" placeholder="Escriba el nombre del solicitante..." value="{{solicitud.solicitante}}">
+                    <input type="hidden" name="solicitante_id" value="{{ solicitud.solicitante_id }}">
+                    {% if solicitud %}
+                        <input type="hidden" name="solicitud_id" value="{{ solicitud.solicitud_id }}">
+                    {% endif %} 
+                </div>
+                <div id="institucion">
+                    <label class="label">INSTITUCIÓN</label>
+                    <select class="select select-bordered w-full" name="institucion_id" id="institucion_id" placeholder="Seleccione una respuesta" {% if solicitud.tipo_solicitud_id == '1' %} disabled='true'{% endif %}>
+                        <option value="" selected hidden>Seleccione...</option>
+                        {% for institucion in lista_instituciones %}
+                            <option value="{{institucion.institucion_id}}" {% if institucion.institucion_id == solicitud.institucion_id %}selected{% endif %}>{{institucion.descripcion}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="auto-columns mb-3">
+                <div id="documentacion_solicita">
+                    <label class="label">DOCUMENTACION SOLICITADA</label>
+                    <select class="select select-bordered w-full" name="doc_solicita" id="doc_solicita" placeholder="Seleccione una respuesta" {% if solicitud.tipo_solicitud_id == '1' %} disabled='true'{% endif %}>
+                        <option value="" selected hidden>Seleccione...</option>
+                        {% for doc_solicitada in lista_documentacion_solicitada %}
+                            <option value="{{doc_solicitada.id_documentacion_solicitada}}" {% if doc_solicitada.id_documentacion_solicitada == solicitud.id_documentacion_solicitada %}selected{% endif %}>{{doc_solicitada.descripcion}}</option>
+                            {#<option value="{{doc_solicitada.id_documentacion_solicitada}}" {{solicitud.id_documentacion_solicitada == doc_solicitada.id_documentacion_solicitada ? 'selected' : ''}}>{{doc_solicitada.descripcion}} {{doc_solicitada.id_documentacion_solicitada}} sol.id_cod_sol{{solicitud.id_documentacion_solicitada}}</option> #}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="label">TIPO DOCUMENTACION</label>
+                    <input type="text" class="input input-bordered w-full" name="tipo_doc" id="tipo_doc" autocomplete="off" value="{{solicitud.tipo_documentacion}}" placeholder="Indique tipo de documentación" {% if solicitud.tipo_solicitud_id == '1' %} disabled='true'{% endif %}>
+                </div>
+
+                <div id="fecha_solicitud">
+                    <label class="label">FECHA DE SOLICITUD</label>
+                    <input type="date" id="fecha" name="fecha" placeholder="Selecciona una fecha" value="{% if solicitud.fecha %}{{ solicitud.fecha|date('Y-m-d')|date('d-m-Y') }}{% endif %}" />
+                </div>
+            </div>
+
+            <div class="w-full mb-3" id="persona_buscada">
+                <h3>PERSONA BUSCADA</h3>
+                <div class="auto-columns">
+                    <div>
+                        <label class="label">NOMBRE</label>
+                        <input type="text" class="input input-bordered w-full" name="buscada_nombre" autocomplete="off" value="{{solicitud.persona_buscada_nombre}}" placeholder="Nombre">
+                    </div>
+                    <div>
+                        <label class="label">APELLIDO</label>
+                        <input type="text" class="input input-bordered w-full" name="buscada_apellido" autocomplete="off" value="{{solicitud.persona_buscada_apellido}}" placeholder="Apellido">
+                    </div>
+                    <div>
+                        <label class="label">DNI</label>
+                        <input type="text" class="input input-bordered w-full" name="buscada_dni" autocomplete="off" value="{{solicitud.persona_buscada_dni}}" placeholder="DNI">
+                    </div>
+                    <div id="div_nacionalidad">
+                        <label class="label">NACIONALIDAD</label>
+                        <select class="select select-bordered w-full" name="nacionalidad" id="nacionalidad" placeholder="Seleccione una respuesta">
+                        <option value="" selected hidden>Seleccione...</option>
+                            {% for nacionalidad in listar_nacionalidad %}
+                                <option value="{{nacionalidad.id_pais}}" {% if solicitud.id_pais == nacionalidad.id_pais %}selected{% endif %}>{{nacionalidad.nacionalidad}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="auto-columns mb-2">
+                <div id="vinculo">
+                    <label class="label">VÍNCULO CON EL SOLICITANTE</label>
+                    <select class="select select-bordered w-full" name="vinculo_id" id="vinculo_id" placeholder="Seleccione una respuesta">
+                        {% for vinculo in lista_vinculos %}
+                            <option value="{{vinculo.vinculo_id}}" {% if solicitud.vinculo_id == vinculo.vinculo_id %}selected{% endif %}>{{vinculo.descripcion}}</option>
+                        {% endfor %}
+                    </select>
+                </div> 
+                <div class="">
+                    <label class="label">NÚMERO DE LEY</label>
+                    <input type="text" class="input input-bordered w-full" name="numero_ley" id="numero_ley" autocomplete="off" value="{{solicitud.num_ley}}" {% if solicitud.tipo_solicitud_id == '1' %} disabled='true'{% endif %}>
+                </div>
+                <div class="">
+                    <label class="label">NÚMERO DE TRÁMITE</label>
+                    <input type="text" class="input input-bordered w-full" name="numero_tramite" id="numero_tramite" autocomplete="off" value="{{solicitud.num_tramite}}" {% if solicitud.tipo_solicitud_id == '1' %} disabled='true'{% endif %}>
+                </div>
+            </div>
+            <div class="w-full mb-2" id="observaciones">
+                <label class="label">OBSERVACIONES</label>
+                <input type="text" class="input input-bordered w-full" name="observaciones" autocomplete="off" value="{{solicitud.observaciones}}">
+            </div>
+            <div class="auto-columns">
+                <div>
+                    <label class="label">TIENE INFO</label>
+                    <select class="form-control w-full" name="tiene_info" id="tiene_info" {% if solicitud.tipo_solicitud_id == '2' %} disabled='true'{% endif %}>
+                        <option value="F" {{solicitud.tiene_info == 'NO' ? '' : 'selected'}}>No</option>
+                        <option value="T" {{solicitud.tiene_info == 'SI' ? 'selected' : ''}}>Si</option>
+                    </select>
+                </div>
+                <div id="periodo_camara">
+                    <label class="label">PERÍODO CÁMARA</label>
+                    <select name="periodo_camara" class="form-control w-full">
+                        <option value="1" {{solicitud.periodo_camara ? 'selected' : ''}}>Si</option>
+                        <option value="0" {{solicitud.periodo_camara ? '' : 'selected'}}>No</option>
+                    </select>
+                </div>
+                {% if solicitud %}
+                <div id="estado">
+                    <label class="label">ESTADO</label>
+                    <select class="select select-bordered w-full" name="estado" required>
+                        <option value="" selected hidden>Seleccione...</option>
+                        {% for estado in lista_estados %}
+                            <option value="{{estado.estado_id}}" {% if solicitud.estado_id == estado.estado_id %}selected{% endif %}>{{estado.descripcion}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div id="personal_id">
+                    <label class="label">ASIGNADO A PERSONAL</label>
+                    <select class="select select-bordered w-full" name="personal_id" placeholder="Seleccione una respuesta">
+                        <option value='' selected hidden>Seleccione...</option>
+                            {% for personal in lista_personal %}
+                                <option value="{{personal.personal_id}}" {% if solicitud.personal_asignado_id == personal.personal_id %}selected{% endif %}>{{personal.descripcion}}</option>
+                            {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="historico-container">
+                <table class="table table-bordered table-striped">
+                    <h3 class="mt-3">HISTÓRICO DE MOVIMIENTOS</h3>
+                    <thead>
+                        <tr>
+                            <th>FECHA</th>
+                            <th>PERSONAL ASIGNADO</th>
+                            <th>OPERACIÓN</th>
+                            <th>USUARIO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for historico in historicos %}
+                        <tr>
+                            <td>{{ historico.fecha_f }}</td>
+                            <td>{{ historico.asignado }}</td>
+                            <td>
+                                <span class="{{ historico.operacion == 'ASIGNADO' ? 'badge badge-warning' : historico.operacion == 'FINALIZADO' ? 'badge badge-success' :  historico.operacion == 'ENVIADO' ? 'badge badge-info' : 'badge badge-error'}} ">{{ historico.operacion }}</span> 
+                            </td>
+                            <td>{{ historico.usuario }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <aside>
+            <div id="archivos-para-adjuntar"></div>
+                <button type="button" class="btn btn-info gap-2 w-full" id="adjuntar-archivos">
+                    <i class="fas fa-plus"></i> ADJUNTAR ARCHIVOS
+                </button><br>
+            <div id="archivos-seleccionados"></div>
+            {% if adjuntos %}<br>
+                <h2 class="text-center mb-3"><b>ARCHIVOS ADJUNTOS</b></h2>
+                <ul>
+                    {% for adjunto in adjuntos %}
+                        <li id="adjunto-{{adjunto.id_recursos}}">
+                            <a href="#" onclick="mostrarArchivo({{adjunto.id_recursos}}, '{{adjunto.file}}', {{solicitud.solicitud_id}})"> {{adjunto.file}} </a>
+                            <i class="fas fa-trash" onclick="accionEliminarAdjunto({{adjunto.id_recursos}},'{{adjunto.file}}', {{solicitud.solicitud_id}})"></i>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <div id="informes-layer"></div>
+                <button type="button" class="btn btn-info gap-2 w-full" id="agregar-informe">
+                    <i class="fas fa-plus"></i> INFORMES
+                </button>
+                
+                <ul id="informes-list">
+                {% if informes %}
+                    {% for infor in informes %}
+                    <li id="informe-{{infor.informe_id}}">
+                        {{infor.descripcion}}
+                        <i class="fas fa-file" title="Confeccionar" onclick="confeccionarInforme({{infor.informe_id}})"></i>
+                        <i class="fas fa-edit" title="Editar" onclick="editarInforme({{infor.informe_id}})"></i>
+                        <i class="fas fa-trash" title="Eliminar" onclick="eliminarInforme({{infor.informe_id}})"></i>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <div id="empty-informes" class="alert alert-light" role="alert">
+                        No hay Informes cargados
+                    </div>
+                {% endif %}
+                </ul>
+                
+        </aside>
+    </form>
+   
+
+{% endblock %} 
+
+{% block modalFooter %}
+    {% if solicitud is empty or APP_permisos["Solicitudes.Editar"] %}
+    <button class="btn btn-success" form="formsolicitudes" type="submit" title="Guardar Solicitud">GUARDAR</button>
+    {% endif %}
+{% endblock %}

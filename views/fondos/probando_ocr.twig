@@ -1,0 +1,74 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+<style>
+    .img-wrapper {
+        padding: 2rem;
+    }
+
+    .img-modal {
+        max-height: 500px;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // const ocr = {{ocr ? (ocr | json_encode | raw) : 'null'}};
+    //    const outputPath = {{outputPath ? (outputPath | json_encode | raw) : 'null'}};
+    //  const comando = {{comando ? (comando | json_encode | raw) : 'null'}};
+</script>
+{% endblock %}
+
+{% block modalHeader %}
+<div class="modal-header">
+    <div class="title" style="">DOCUMENTACION</div>
+    <div class="actions">
+        <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+    </div>
+</div>
+{% endblock %}
+
+{% block appBody %}
+<h3 class="text-center mt-3">PDF CONVERTIDO DEL TIF:</h3>
+<div class="img-wrapper">
+    <!-- <iframe src="data:application/pdf;base64,{{urlIframe}}" height="500px" width="100%" style="border: 0;" type:"application/pdf"></iframe>-->
+    <p>"{{ocr}}"</p>
+    <br>
+    {% if pathNvaCarpeta %}
+        <p>pathNvaCarpeta: "{{ pathNvaCarpeta }}"</p>
+    {% else %}
+        <p>no trajo nada pathNvaCarpeta</p>
+    {% endif %}
+    {% if comando %}
+        <p>comando: "{{ comando }}"</p>
+    {% else %}
+        <p>no trajo nada comando</p>
+    {% endif %}
+    {% if despeckleImage %}
+        <p>despeckleImage: "{{ despeckleImage }}"</p>
+    {% else %}
+        <p>no trajo nada despeckleImage</p>
+    {% endif %}
+    {% if contrastImage %}
+        <p>contrastImage: "{{ contrastImage }}"</p>
+    {% else %}
+        <p>no trajo nada contrastImage</p>
+    {% endif %}
+    {% if adaptiveSharpenImage %}
+        <p>adaptiveSharpenImage: "{{ adaptiveSharpenImage }}"</p>
+    {% else %}
+        <p>no trajo nada adaptiveSharpenImage</p>
+    {% endif %}
+    {% if normalizeImage %}
+        <p>normalizeImage: "{{ normalizeImage }}"</p>
+    {% else %}
+        <p>no trajo nada normalizeImage</p>
+    {% endif %}
+    <br>
+    
+</div>
+{% endblock %}

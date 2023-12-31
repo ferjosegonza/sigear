@@ -1,0 +1,632 @@
+/* ========================================================================== */
+/* BASE LAYOUT - HEADER/BODY/FOOTER */
+/* ========================================================================== */
+.app-layout {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    overflow: hidden;
+    /*overflow: auto;*/
+    display:flex;
+    flex-direction: column;
+}
+
+.app-layout > .layout__header {
+    position: relative;
+    display: grid;
+    flex-direction: row;
+
+    align-items: center;
+}
+.app-layout > .layout__header > .title {
+    font-size: 2.3rem;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 5rem;
+    color: #555;
+    flex: 1;
+    padding-left: 2rem;
+}
+.app-layout > .layout__header > .actions {
+    padding-right: 1rem;
+}
+.app-layout > .layout__header > .actions > * {
+    height: 4rem;
+    width: 4rem;
+    line-height: 4rem;
+    color: #333 !important;
+    border: none !important;
+    font-size: 2.7rem;
+    background: none !important;
+}
+
+.app-layout > .layout__body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    /*flex: 1 0 auto;*/
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    align-items: center;
+}
+
+.app-layout > .layout__body > * {
+    width: 100%;
+}
+
+.app-layout > .layout__footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.app-layout > .layout__footer > * {
+    flex: 1;
+}
+
+/* .app-layout > .layout__footer > button,
+.app-layout > .layout__footer > a {
+    font-weight: 300;
+    height: 5rem;
+    min-width: 7rem;
+    border-radius: 0;
+    font-size: 1.7rem;
+    padding: 0;
+    text-align: center;
+    background-color: #3498db;
+    border: 1px solid #2980b9;
+    color: #fff;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+    -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+}
+.app-layout > .layout__footer > button:hover,
+.app-layout > .layout__footer > a:hover {
+    background-color: #2980b9;
+    border: 1px solid #2980b9;
+    color: #fff;
+} */
+
+.app-layout.with-padding {
+    padding: 0;
+}
+.app-layout.with-padding > .layout__body {
+    padding: 2rem;
+}
+
+.app-layout.vertical-centered > .layout__body {
+    justify-content: center;
+}
+.app-layout.vertical-centered > .layout__body > .app-content {
+    flex: none;
+}
+
+/* ========================================================================== */
+/* CONTENT COMPONENT - ONLY USE INSIDE BASE LAYOUT BODY
+/* ========================================================================== */
+.app-content {
+    width: 100%;
+    flex: 1;
+    position: relative;
+}
+
+.app-content.max-width-sm { max-width: 576px; }
+.app-content.max-width-md { max-width: 768px; }
+.app-content.max-width-lg { max-width: 992px; }
+.app-content.max-width-xl { max-width: 1200px; }
+
+/* ========================================================================== */
+/* MODAL */
+/* ========================================================================== */
+.app-modal {
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events:none;
+}
+.app-modal.active-view {
+    z-index: 100001;
+}
+.app-modal > .app-modal__container {
+    position: relative;
+    width: 50%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    pointer-events: all;
+}
+.app-modal.app-modal--is-detail > .app-modal__container {
+    position: absolute;
+    top: 7rem;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: unset;
+}
+.app--with-solapas:not(.solapas--edicion) .app-modal.app-modal--is-detail > .app-modal__container,
+.app--with-solapas.solapas--edicion.state--edicion .app-modal.app-modal--is-detail > .app-modal__container{
+    top: 9.5rem;
+}
+.app-modal:not(.app-modal--is-detail) > .app-modal__container {
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+}
+
+.app-modal:not(.app-modal--is-detail) > .app-modal__container .app-layout {
+    position: unset;
+}
+
+.app-modal > .app-modal__container > .app-layout > .layout__body {
+    background-color: #f5f5f5;
+}
+.app-modal:not(.app-modal--is-detail) > .app-modal__container > .app-layout > .layout__body {
+    max-height: 80vh;
+}
+
+.app-modal > .app-modal__container > .app-modal__header {
+    padding: 0 2rem;
+    position: relative;
+    background: #fff;
+    display: flex;
+    flex-direction: row;
+    max-height: 6.4rem;
+    align-items: center;
+}
+.app-modal > .app-modal__container > .app-modal__header > .title {
+    font-size: 2.3rem;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 6.4rem;
+    color: #555;
+    flex: 1;
+}
+.app-modal > .app-modal__container > .app-modal__header > .actions > * {
+    height: 4rem;
+    width: 4rem;
+    line-height: 4rem;
+    margin: .7rem 0;
+    color: #333 !important;
+    border: none !important;
+    font-size: 2.7rem;
+    background: none !important;
+    transition: background .2s ease-in-out;
+    -webkit-transition: background .2s ease-in-out;
+}
+.app-modal > .app-modal__container > .app-modal__header > .actions > *:hover {
+    background: #555;
+    color: #fff;
+}
+.app-modal > .app-modal__container > .app-modal__body {
+    flex: 1;
+    position: relative;
+    background-color: #f5f5f5;
+    overflow-y: auto;
+}
+.app-modal:not(.app-modal--is-detail) > .app-modal__container > .app-modal__body {
+    max-height: 80vh;
+}
+.app-modal:not(.app-modal--is-detail) > .app-modal__container > .app-modal__body > .content {
+    position: relative;
+}
+.app-modal > .app-modal__container > .app-modal__footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.app-modal > .app-modal__container > .app-modal__footer > * {
+    flex: 1;
+}
+
+.app-modal > .app-modal__container.modal--rounded {
+    border-radius: 2rem;
+    overflow: hidden;
+}
+
+.modal--full-width {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    left: 0;
+    right: 0;
+}
+
+
+@media only screen and (min-width: 768px) {
+    .app-header:not(.shrink) ~ .app-modal.app-modal--is-detail .app-modal__container,
+    .app-header:not(.shrink) ~ .app--with-solapas:not(.solapas--edicion) .app-modal.app-modal--is-detail > .app-modal__container,
+    .app-header:not(.shrink) ~ .app--with-solapas.solapas--edicion.state--edicion .app-modal.app-modal--is-detail > .app-modal__container {
+        top: 8rem;
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .app-modal > .app-modal__container {
+        width: 90%;
+    }
+}
+
+
+/* ========================================================================== */
+/* COMPONENTE HEADER */
+/* ========================================================================== */
+
+.app-header {
+    padding: 0 2rem;
+    width: 100%;
+    position: relative;
+    background: #466d8b;
+    display: flex;
+    flex-direction: row;
+    max-height: 6.4rem;
+    align-items: center;
+}
+.app-header > .title {
+    font-size: 2.3rem;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 6.4rem;
+    color: #fff;
+    flex: 1;
+}
+.app-header > .actions > * {
+    height: 4rem;
+    width: 4rem;
+    line-height: 4rem;
+    margin: .7rem 0;
+    color: #fff;
+    border: none !important;
+    font-size: 1.7rem;
+    background: none !important;
+    transition: background .2s ease-in-out;
+    -webkit-transition: background .2s ease-in-out;
+    border-radius: 50%;
+}
+/*
+.app-header > .actions > *:hover {
+    background: #466d8b !important;
+    border: none !important;
+} */
+
+/* ========================================================================== */
+/* COMPONENTE ESTADISTICA */
+/* ========================================================================== */
+.app-estadistica {
+    border-radius: 0 0 .5rem .5rem;
+    overflow: hidden;
+}
+.stats-expanded .app-estadistica {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.app-estadistica > .app-estadistica__desc {
+    background: #6BABE5 !important;
+    border-color: #6BABE5 !important;
+    color: #fff;
+    text-align: center;
+    font-size: 1.5rem;
+    padding: 1rem;
+    line-height: 1;
+    position: relative;
+}
+.stats-expanded .app-estadistica > .app-estadistica__desc {
+    flex:1;
+    padding: 2rem 1rem;
+    border-radius: .5rem  0 0 .5rem;
+}
+.stats-expanded .app-estadistica > .app-estadistica__desc:after {
+    content: ' ';
+    height: 100%;
+    width: 2rem;
+    position: absolute;
+    top:0;
+    right: -2rem;
+    border-left-width: 1.5rem;
+    border-left-color: inherit;
+    border-left-style: solid;
+    border-bottom: 2.75rem solid transparent;
+    border-top: 2.75rem solid transparent;
+}
+.app-estadistica > .app-estadistica__value {
+    background: #e2e2e2;
+    color: #333;
+    text-align: center;
+    font-size: 2rem;
+    line-height: 1;
+    padding: 1rem;
+    flex: 1;
+    border-radius: 0 0 .5rem .5rem;
+}
+.stats-expanded .app-estadistica > .app-estadistica__value {
+    flex:1;
+    padding: 1.75rem 1rem;
+    border-radius: 0 .5rem .5rem 0;
+}
+
+
+
+.app-estadistica.color-celeste > .app-estadistica__desc {
+    background: #6caae4 !important;
+    border-color: #6caae4 !important;
+}
+
+.app-estadistica.color-azul > .app-estadistica__desc {
+    background: #466d8b !important;
+    border-color: #466d8b !important;
+}
+
+.app-estadistica.color-verde > .app-estadistica__desc {
+    background: #56bb36 !important;
+    border-color: #56bb36 !important;
+}
+
+.app-estadistica.color-amarillo > .app-estadistica__desc {
+    background: #e6cc3c !important;
+    border-color: #e6cc3c !important;
+}
+
+.app-estadistica.color-naranja > .app-estadistica__desc {
+    background: #ff8d00 !important;
+    border-color: #ff8d00 !important;
+}
+
+.app-estadistica.color-rojo > .app-estadistica__desc {
+    background: #ce6767 !important;
+    border-color: #ce6767 !important;
+}
+
+/* ========================================================================== */
+/* COMPONENTE BOTONES */
+/* ========================================================================== */
+.btn__small {}
+.app-layout > .layout__footer > button.btn__small,
+.app-layout > .layout__footer > a.btn__small {
+    max-width: 10rem;
+}
+
+.btn__darkblue {
+    background-color: #466d8b !important;
+    border: 1px solid #466d8b !important;
+    color: #fff !important;
+}
+.btn__darkblue:hover {
+    background-color: #2f485a !important;
+    border: 1px solid #2f485a !important;
+    color: #fff !important;
+}
+
+.btn__red {
+    background-color: #e74c3c !important;
+    border: 1px solid #c0392b !important;
+    color: #fff !important;
+}
+.btn__red:hover {
+    background-color: #c0392b !important;
+    border: 1px solid #c0392b !important;
+    color: #fff !important;
+}
+
+.btn__green {
+    background-color: #1abc9c !important;
+    border: 1px solid #16a085 !important;
+    color: #fff !important;
+}
+.btn__green:hover {
+    background-color: #16a085 !important;
+    border: 1px solid #16a085 !important;
+    color: #fff !important;
+}
+
+.btn__orange {
+    background-color: #ff8d00 !important;
+    border: 1px solid #CC8400 !important;
+    color: #fff !important;
+}
+.btn__orange:hover {
+    background-color: #CC8400 !important;
+    border: 1px solid #CC8400 !important;
+    color: #fff !important;
+}
+
+.btn__darkorange {
+    background-color: #d26c15 !important;
+    border: 1px solid #d26c15 !important;
+    color: #fff !important;
+}
+
+.btn__darkorange:hover {
+    background-color: #9e571a !important;
+    border: 1px solid #9e571a !important;
+    color: #fff !important;
+}
+
+/* ========================================================================== */
+/* LAYOUT ESTADISTICA TABLA */
+/* ========================================================================== */
+.app-layout__estadisticas-tabla {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.app-layout__estadisticas-tabla:not(.stats-expanded) .showOnExpand,
+.app-layout__estadisticas-tabla.stats-expanded .hideOnExpand {
+    display: none !important;
+}
+
+.app-layout__estadisticas-tabla > .app-layout__estadisticas-tabla__tabla {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+.app-layout__estadisticas-tabla > .app-layout__estadisticas-tabla__estadisticas {
+    min-width: 11rem;
+    max-width: 11rem;
+    display: none;
+    position: relative;
+    margin-right: 2rem;
+}
+.app-layout__estadisticas-tabla.stats-expanded > .app-layout__estadisticas-tabla__estadisticas {
+    min-width: 22rem;
+    max-width: 22rem;
+}
+
+@media (min-width: 576px) {
+    .app-layout__estadisticas-tabla > .app-layout__estadisticas-tabla__estadisticas {
+        display: block;
+    }
+}
+
+.app-layout__estadisticas-tabla .app-layout__estadisticas-tabla__expander {
+    width: 100%;
+    border: none;
+    background-color: #466d8b !important;
+    color: #fff;
+    line-height: 2.5rem;
+}
+
+.app-layout__estadisticas-tabla > .app-layout__estadisticas-tabla__estadisticas > .app-estadistica + .app-estadistica,
+.app-layout__estadisticas-tabla > .app-layout__estadisticas-tabla__estadisticas > .app-layout__estadisticas-tabla__estadisticas__container > .app-estadistica + .app-estadistica {
+    margin-top: 1.5rem;
+}
+
+/* estilos que afectan a otros modulos */
+.app-layout__estadisticas-tabla .app-layout__estadisticas-tabla__tabla .table-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.app-layout__estadisticas-tabla > .app-layout__estadisticas-tabla__estadisticas .bootstrap-datetimepicker-widget {
+    width: 100% !important;
+}
+
+/* ========================================================================== */
+/* LAYOUT MASTER DETAIL */
+/* ========================================================================== */
+.app-layout__master-detail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+}
+.app-layout__master-detail.is-reversed {
+    flex-direction: row-reverse;
+}
+
+.app-layout__master-detail > .detail__container,
+.app-layout__master-detail > .master__container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.app-layout__master-detail > .master__container {
+    background-color: #fff;
+}
+.app-layout__master-detail > .detail__container {
+    background-color: #f5f5f5;
+}
+.app-layout__master-detail:not(.is-reversed) > .master__container,
+.app-layout__master-detail.is-reversed > .detail__container {
+    width: 500px;
+    z-index: 1;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+}
+.app-layout__master-detail:not(.is-reversed) > .detail__container,
+.app-layout__master-detail.is-reversed > .master__container {
+    flex: 1;
+}
+@media only screen and (max-width: 1000px) {
+    .app-layout__master-detail:not(.is-reversed) > .master__container,
+    .app-layout__master-detail.is-reversed > .detail__container {
+        width: 50%;
+    }
+}
+@media only screen and (max-width: 768px) {
+    .app-layout__master-detail > .master__container,
+    .app-layout__master-detail > .detail__container {
+        width: 100% !important;
+        flex: unset;
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+    }
+    .app-layout__master-detail > .detail__container {
+        -webkit-transform: translateX(+100%);
+        transform: translateX(+100%);
+        -webkit-transform-style: preserve-3d;
+        transform-style: preserve-3d;
+        will-change: transform;
+        transition-duration: .2s;
+        transition-timing-function: cubic-bezier(.4,0,.2,1);
+        transition-property: transform;
+        transition-property: transform,-webkit-transform;
+    }
+    .app-layout__master-detail:not(.is-reversed) > .master__container {
+        z-index: 0;
+    }
+    .app-layout__master-detail.is-reversed > .detail__container {
+        z-index: 1;
+        -webkit-transform: translateX(-100%);
+        transform: translateX(-100%);
+    }
+    .app-layout__master-detail.detail--active > .detail__container {
+        -webkit-transform: translateX(0);
+        transform: translateX(0);
+    }
+}
+
+/* ========================================================================== */
+/* LAYOUT SCAN */
+/* ========================================================================== */
+
+/* on manual */
+.app-layout__scan:not(.modo__manual)  .on_manual{
+    display: none;
+}
+
+/* on escaner */
+.app-layout__scan:not(.modo__escaner) .on_escaner {
+    display: none;
+}
+.app-layout__scan .on_escaner {
+    text-align: center;
+
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
+}
+.app-layout__scan .on_escaner .display-5 {
+    margin-bottom: 1rem;
+}
+.app-layout__scan .on_escaner p {
+    margin: 0;
+    line-height: 1.5;
+}

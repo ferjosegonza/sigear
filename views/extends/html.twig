@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <title>{% block title %}SIGeAr{% endblock %}</title>
+
+        <link rel="shortcut icon" href="/images/favicon.png">
+
+        {% if manifestUrl %}
+            <!-- PWA manifest -->
+            <link rel="manifest" href="{{manifestUrl}}">
+        {% endif %}
+
+        <link rel="stylesheet" type="text/css" href="/css/base.css?{{appVersion}}">
+        <link rel="stylesheet" type="text/css" href="/css/app.css?{{appVersion}}">
+
+        <!-- <link href="https://cdn.jsdelivr.net/npm/daisyui@2.38.1/dist/full.css" rel="stylesheet" type="text/css" /> -->
+        <link href="/css/daisy/full.css" rel="stylesheet" type="text/css" />
+        <script src="https://cdn.tailwindcss.com"></script>
+
+    {% block style %}{% endblock %}
+    <script>
+        const BASE_URL = '{{baseUrl}}';
+        const CENTRALASSETS_URL = '';
+        const DEBUG = {% if debug %}true{% else %}false{% endif %};
+        const APP_VERSION = '{{appVersion}}';
+        const IS_USER_LOGGED = {% if usuario %}true{% else %}false{% endif %};
+        const TEMPLATE_NAME_BASE = '{{templateName}}';
+    </script>
+
+</head>
+<body>
+
+{% block htmlBody %}{% endblock %}
+<script type="text/javascript" src="/js/vendor/axios/axios-v0.27.2.min.js?{{appVersion}}"></script>
+<script type="text/javascript" src="/js/base.js?{{appVersion}}"></script>
+{% if not sinInitJS %}<script type="text/javascript" src="/js/init.js?{{appVersion}}"></script>{% endif %}
+
+{% block script %}{% endblock %}
+<script>
+    {% if appBackTo %}
+        APP.setearBackTo('{{appBackTo}}');
+    {% endif %}
+    {% if serviceWorkerUrl %}
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('{{serviceWorkerUrl}}');
+        });
+    }
+    {% endif %}
+</script>
+</body>
+</html>

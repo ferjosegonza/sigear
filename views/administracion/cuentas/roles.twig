@@ -1,0 +1,190 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 15px;
+        }
+        .selector h3 {
+            margin: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .selector ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            margin-top: 20px;
+        }
+        .selector ul li {
+            border: 1px solid #bdbdbd;
+            font-size: 14px;
+            line-height: 1;
+            padding: 10px;
+            transition: 300ms all ease;
+        }
+        .selector ul li:hover {
+            background: #ebebeb;
+        }
+        .selector #disponibles ul li {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .selector #asignados ul li {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            column-gap: 10px;
+        }
+        .selector #disponibles ul li::after {
+            content: "\f0da";
+            font-family: "Font Awesome 5 Free";
+            font-weight: bold;
+        }
+        .selector #asignados ul li::before {
+            content: "\f0d9";
+            font-family: "Font Awesome 5 Free";
+            font-weight: bold;
+        }
+        div#asignados, div#disponibles {
+            overflow-y: auto;
+            height: 50vh;
+        }
+
+        .selector h3 {
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+            state.cuenta = {{cuenta ? (cuenta | json_encode | raw) : '[]'}};
+            state.roles = {{roles ? (roles | json_encode | raw) : '[]'}};
+            state.rolesAsignados = state.cuenta.roles.map(rol=>{
+                return {
+                    id: rol.rol_id,
+                    key: rol.rol_key
+                }
+            });
+
+            const dom = {
+                disponibles: document.getElementById('disponibles'),
+                asignados: document.getElementById('asignados'),
+                bsqDisponibles: document.getElementById('bsqDisponibles'),
+                bsqAsignados: document.getElementById('bsqAsignados'),
+            };
+
+            state.renderRoles = ()=>{
+                let disponibles = state.roles.filter(rol => state.rolesAsignados.findIndex(cuentaRol=>(cuentaRol.id??cuentaRol.id)==rol.id)===-1);
+                state.renderDisponibles(disponibles.filter(item=>{return item.key.toLowerCase().includes(dom.bsqDisponibles.value.toLowerCase())}));
+                state.renderAsignados(state.rolesAsignados.filter(item=>{return item.key.toLowerCase().includes(bsqAsignados.value.toLowerCase())}));
+            }
+
+            state.renderDisponibles = (roles)=>{
+                let html = '<ul>';
+                roles.forEach(rol => {
+                    html += `<li title="${rol.descripcion}" onclick="APP.state.asignar(${rol.id})">${rol.key}</li>`;
+                });
+                dom.disponibles.innerHTML = html;
+            }
+
+            state.renderAsignados = (roles)=>{
+                let html = '<ul>';
+                roles.forEach(rol => {
+                    html += `<li title="${rol.descripcion}" onclick="APP.state.quitar(${rol.id})">${rol.key}</li>`;
+                });
+                dom.asignados.innerHTML = html;
+            }
+
+            state.asignar = (id)=>{
+                let rol = state.roles.find(rol => rol.id == id);
+                if(!rol) return;
+                state.rolesAsignados.push(rol);
+                state.renderRoles();
+            }
+
+            state.quitar = (id)=>{
+                let index = state.rolesAsignados.findIndex(rol => rol.id == id);
+                if(index<0) return;
+                state.rolesAsignados.splice(index,1);
+                state.renderRoles();
+            }
+
+            const guardarCuentaRoles = () => {
+                {% if APP_permisos["Cuentas.Roles.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/cuentas/{{cuenta.cuenta_id}}/roles`,
+                    type: 'POST',
+                    data: {
+                        roles: state.rolesAsignados,
+                    },
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.getElementById('bsqDisponibles').addEventListener('keyup',state.renderRoles);
+            document.getElementById('bsqDisponibles').addEventListener('search',state.renderRoles);
+            document.getElementById('bsqAsignados').addEventListener('keyup',state.renderRoles);
+            document.getElementById('bsqAsignados').addEventListener('search',state.renderRoles);
+            {% if APP_permisos["Cuentas.Roles.Editar"] %}
+            document.getElementById('btnGuardar').addEventListener('click',guardarCuentaRoles);
+            {% endif %}
+            state.renderRoles();
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="selector">
+        <div>
+            <h3>Disponibles</h3>
+            <div class="w-full">
+                <input type="search" class="input input-bordered w-full" id="bsqDisponibles" autocomplete="off" placeholder="Buscar" required>
+            </div>
+            <div id="disponibles"></div>
+        </div>
+        <div>
+            <h3>Asignados</h3>
+            <div class="w-full">
+                <input type="search" class="input input-bordered w-full" id="bsqAsignados" autocomplete="off" placeholder="Buscar" required>
+            </div>
+            <div id="asignados"></div>
+        </div>
+    </div>
+{% endblock %}
+{% block modalFooter %}
+    {% if APP_permisos["Cuentas.Roles.Editar"] %}
+    <button class="btn btn-success" id="btnGuardar" title="Guardar">GUARDAR</button>
+    {% endif %}
+{% endblock %}
+

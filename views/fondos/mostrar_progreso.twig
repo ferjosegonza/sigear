@@ -1,0 +1,123 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .slick-loading .slick-list {
+            background: #fff url('./ajax-loader.gif') center center no-repeat;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.min.js"></script>
+    <script>
+        /* APP.ready(() => {
+            executeProcess(0);
+        }); */
+        let state = null;
+
+
+        //APP.showLoader();
+        APP.state = new function () {
+            //const parentState = APP.state;
+            state = this;
+            const idExcel = {{idExcel ? (idExcel | json_encode | raw) : 'null'}};
+            state.executeProcess = (offset, batch = false) => {
+                console.log('entró a executeProcess');
+                
+                $.ajax({
+                    url: "{{ baseUrl }}/api/fondos/cargarEnBase/" + idExcel,
+                    type: 'GET',
+                    success: function(idExcel) {
+                    $.ajax({
+                        url: "{{ baseUrl }}/api/fondos/cant_para_ocerrear/"  + idExcel,
+                        method: 'GET',
+                        success: function (array) {
+                        cantParaOcerrear = array[0];
+                        idExcelNuevo = parseInt(array[1]);
+                        $("#progresoEjecucion").html("Se está ejecutando el primer proceso, aguarde por favor...");
+                        executeOcrIndividual(1); // Inicia la recursión con el primer índice del bucle
+                        },
+                        error: swalError
+                    });
+                    },
+                    error: swalError
+                });
+                
+                function executeOcrIndividual(i) {
+                    if (i <= cantParaOcerrear) {
+                    $.ajax({
+                        url: "{{ baseUrl }}/api/fondos/ocrIndividual/"  + idExcelNuevo,
+                        method: 'GET',
+                        data: { i: i },
+                        //async: true,
+                        success: function(html) {
+                        $("#progresoEjecucion").html("Progreso: " + i + " de " + cantParaOcerrear +" completado. Procesando el siguiente, aguarde por favor...");
+                        porcentajeAvance= i / cantParaOcerrear * 100;
+                        barra = porcentajeAvance.toFixed(0) + "%";
+                        $("#porcentaje").html(porcentajeAvance.toFixed(2) +"% completado");
+                        $("#barra-progreso").css({
+                            "background-color": "green" ,
+                            "width": barra,
+                            "height" : "10px",
+                            "border": "1px solid black",
+                            "justify-content": "left"
+                        });
+                        executeOcrIndividual(i + 1); // Llama recursivamente con el siguiente índice
+                        },
+                        error: swalError
+                    });
+                    } else {
+                    // Todas las solicitudes AJAX han sido procesadas
+                    swal({
+                        icon: "success",
+                        text: "Proceso finalizado!",
+                        buttons: [false, 'Aceptar']
+                    }).then(value => {
+                        cerrarModal();
+                    });
+                    }
+                }
+            };
+        };
+
+
+    let cant_para_ocerrear = state.executeProcess(0);
+
+    </script>
+{% endblock %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+
+<div id="sending" class="col-lg-12" style="display:none;">
+    <h3>Procesando...</h3>
+    <div class="execute-time-content">
+        Tiempo transcurrido: <span class="execute-time">0 segundos</span>
+    </div>
+
+    <div class="end-process" style="display:none;">
+        <div class="alert alert-success">El proceso ha sido completado.</div>
+    </div>
+</div>
+
+<div class="info">
+    <div class="auto-columns mb-3">
+        <div id="progresoEjecucion"></div>
+    </div>
+</div>
+<div id="porcentaje"></div>
+<div style="width: 100%; border: 1px solid black; height: 20px; display: flex; justify-content: left; align-items: center;">
+    <div id="barra-progreso" ></div>
+</div>
+
+    
+{% endblock %}

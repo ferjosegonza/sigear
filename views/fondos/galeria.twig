@@ -1,0 +1,195 @@
+{% extends "extends/modal.twig" %}
+
+{% block style %}
+<style>
+    #sending .slick-loading .slick-list {
+        background: #fff url('./ajax-loader.gif') center center no-repeat !important;
+    }
+
+    /* Estilo para el modal de pantalla completa */
+    .modal--full-screen {
+        width: 100% !important;
+        height: 100% !important;
+        top: 0 !important;
+        left: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        /*background: rgba(0, 0, 0, 0.8) !important;  Fondo semitransparente */
+        z-index: 9999 !important;
+    }
+
+    /* Estilo para el contenido del modal de pantalla completa */
+    .modal--full-screen .modal-content {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Ajustes para permitir el desplazamiento horizontal y vertical */
+    /*.image-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        position: relative;
+    } */
+
+    .image-container img {
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.25s ease-in-out;
+        transform-origin: top left;
+        overflow: scroll;
+        position: relative;
+    }
+
+    /* Ajustes para permitir el desplazamiento horizontal y vertical */
+    /*.image-container {
+        @apply w-full h-full flex justify-center items-center overflow-scroll relative;
+    }*/
+
+    /*.image-container img {
+        @apply object-contain max-w-full max-h-full user-drag-none user-select-none pointer-events-none transition-transform transform-origin-center;
+    }*/
+
+    .este {
+        height: 100%;
+        width: 100%;
+        /*max-width: 100%;
+        max-height: 100%;*/
+        line-height: 1em;
+        overflow-x: scroll;
+        overflow-y: scroll;
+        border: 1px solid;
+    }
+
+    /* Clases de Tailwind CSS para el cursor */
+    /*.btn-zoom {
+        @apply cursor-pointer;
+    }*/
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    //APP.showLoader();
+    var imageId = "";
+    var repositorioID = {{repositorioID ? (repositorioID | json_encode | raw) : 'null'}};
+    var URL_DE_LA_IMAGEN = {{URL_DE_LA_IMAGEN ? (URL_DE_LA_IMAGEN | json_encode | raw) : 'null'}};
+    var listaJPG = {{listaJPG ? (listaJPG | json_encode | raw) : 'null'}};
+    var imageId = {{imageId ? (imageId | json_encode | raw) : 'null'}};
+/*
+    function loadImage(newImageId) {
+        //console.log('newImageId: '+newImageId);
+        // Actualiza el imageId antes de cargar una nueva imagen
+        imageId = newImageId;
+        //console.log('imageId: '+imageId);
+
+        // Resto del código para cargar la imagen
+        var image = null;
+        //console.log('image desp: '+image);
+        var image = document.getElementById(imageId);
+        //console.log('image desp de get: '+image);
+        //console.log('---------------');
+    }*/
+
+    // Función para aplicar zoom a la imagen
+    function zoomImage(factor) {
+        let imageZoom = null;
+        let currentScale = null;
+        let newScale = null;
+        imageZoom = document.getElementById(imageId);
+        currentScale = parseFloat($(imageZoom).css('transform').split(',')[3]) || 1;
+        newScale = currentScale * factor;
+
+        $(imageZoom).css('transform', `scale(${newScale})`);
+        //$(imageZoom).css('transform', `translateY(${(newScale) * 100}) translateX(${(newScale) * 100})`);
+    }
+/*
+    // Evento para acercar la imagen
+    $('#zoom-in-button').on('click', function () {
+        zoomImage(1.2);
+    });
+
+    // Evento para alejar la imagen
+    $('#zoom-out-button').on('click', function () {
+        zoomImage(0.8);
+    });*/
+
+    function showGaleria(repositorioID, pagina, paginaActual) {
+        var imageIdActual = 'image' + paginaActual;
+        $.ajax({
+            url: `{{ baseUrl }}/fondos/mostrarGaleria/${repositorioID}`,
+            type: 'GET',
+            data: {
+                repositorioID: repositorioID,
+                pagina: pagina,
+            },
+            success: html => {
+                let actualPage = document.getElementById(imageIdActual);
+                actualPage.parentNode.removeChild(actualPage);
+                //cerrarModal();
+                abrirModal(html, {
+                    onClose: () => {
+                        var imageId = 'image' + pagina;
+                        //loadImage(imageId);
+                        cerrarModal();
+                        //state.repositorio.recargar();
+                    }
+                });
+            },
+            error: swalError
+        });
+    }
+</script>
+
+{% endblock %}
+
+{% block modalHeader %}
+<div class="modal-header">
+    <div class="title" style="">{{modalTitle}}</div>
+    <div class="actions">
+        <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+    </div>
+</div>
+{% endblock %}
+
+{% block modalBody %}
+<div id="sending" class="modal--full-screen container-fluid">
+    <h2><strong>Página {{pagina}} de {{cantPaginas.max_tiff_pagina}}</strong></h2>
+    {% set pag_anterior = pagina - 1 %}
+    {% set pag_sgte = pagina + 1 %}
+    <div class="d-flex justify-content-between">
+        <div>
+            <button type="button" class="btn btn-success" onclick="showGaleria({{repositorioID}}, {{pag_anterior}}, {{pagina}});" {% if pagina == 1 %} disabled='true'{% endif %}>ANTERIOR</button>
+            <button type="button" class="btn btn-success" onclick="showGaleria({{repositorioID}}, {{pag_sgte}}, {{pagina}});" {% if pagina == cantPaginas.max_tiff_pagina %} disabled='true'{% endif %}>SIGUIENTE</button>
+        </div>
+        <div>
+            {#<button type="button" class="btn btn-success btn-zoom" id="zoom-in-button">ACERCAR</button>
+            <button type="button" class="btn btn-success btn-zoom" id="zoom-out-button">ALEJAR</button>
+#}
+            <button type="button" class="btn btn-success btn-zoom" id="zoom-in-button" onclick="zoomImage(1.2);">
+                <i class="fas fa-search-plus"></i> ACERCAR
+            </button>
+            <button type="button" class="btn btn-success btn-zoom" id="zoom-out-button" onclick="zoomImage(0.8);">
+                <i class="fas fa-search-minus"></i> ALEJAR
+            </button>
+
+        </div>
+        <div>
+            <button type="button" class="btn btn-success" onclick="showGaleria({{repositorioID}}, 1, {{pagina}});" {% if pagina == 1 %} disabled='true'{% endif %}>IR A LA PRIMER PÁGINA</button>
+            <button type="button" class="btn btn-success" onclick="showGaleria({{repositorioID}}, {{cantPaginas.max_tiff_pagina}}, {{pagina}});" {% if pagina == cantPaginas.max_tiff_pagina %} disabled='true'{% endif %}>IR A LA ÚLTIMA PÁGINA</button>
+        </div>
+    </div>
+    <div class="este row">
+        <div class="col-12">
+            <div class="image-container" id="image-container">
+                <img id="{{imageId}}" src="data:image/jpeg;base64,{{ archivo }}" class="img-fluid" alt="Imagen" draggable="true" />
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

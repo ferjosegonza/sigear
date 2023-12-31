@@ -1,0 +1,32 @@
+{% extends 'extends/base.twig' %}
+{% block script %}
+    <script>
+        APP.ready(async () => {
+            let botones = document.querySelectorAll('.btn-app');
+            let appMesa = null;
+            botones.forEach( element => {
+                if(element.href.indexOf('mesa-de-ayuda') >= 0){
+                    appMesa = element;
+                }
+            } );
+
+            if(appMesa){
+                $.ajax({
+                    url: appMesa.firstElementChild.src,
+                    success: () =>{
+                    },
+                    error: () => {
+                        appMesa.classList.add('d-none');
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    {% if portada and not botonera %}
+        {% set botonera = appBotonera %}
+    {% endif %}
+    {% include 'includes/lista-btn-app.twig' with {apps: botonera} %}
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.solicitudes = null;
+
+            APP.ready(() => {
+                state.solicitudes = $("#solicitudes").DataTable({
+                    titulo: 'SOLICITUDES',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    // ordenes: {key: 'asc'},
+                    // ordenes: {estado_id:'asc', fecha_creacion:'asc'},
+                    ajax: {
+                        url: "{{baseUrl}}/api/solicitudes",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Solicitudes.Detalle"] %}onclick="APP.state.detalleSolicitudes(${item.solicitud_id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Solicitudes.Borrar"] %}onclick="APP.state.eliminarSolicitud(${item.solicitud_id}, '${item.solicitante}')"{% endif %}`;
+                            return [
+                                `<div ${accionDetalle}>${item.solicitud_id}</div>`,
+                                `<div ${accionDetalle}>${item.solicitante}</div>`,
+                                `<div ${accionDetalle}>${item.tipo_solicitud}</div>`,
+                                `<div ${accionDetalle}>${item.institucion}</div>`,
+                                `<div ${accionDetalle}>${item.vinculooley}</div>`,
+                                `<div ${accionDetalle}>${item.tiene_info}</div>`,
+                                `<div ${accionDetalle}>${item.num_tramite}</div>`,
+                                `<div ${accionDetalle} class="${item.estado == 'INGRESADO' ? 'badge badge-error' : item.estado == 'ASIGNADO' ? 'badge badge-warning' : item.estado == 'FINALIZADO' ? 'badge badge-success' : item.estado == 'ENTREGADO' ? 'badge badge-info' : ''}">${item.estado}</div>`,
+                                `<div ${accionDetalle}>${item.nombre_completo_up}</div>`,
+                                `<div ${accionDetalle}>${item.fecha_creacion_f}</div>`,
+                                {% if APP_permisos["Solicitudes.Borrar"] %}`<div ${accionEliminar} title="Borrar Solicitud"><i class="fas fa-trash"></i></div>`{% endif %},
+                                ];
+                            }),
+                    }
+                });
+
+                state.solicitudes.activarOrden("colSolicitante", {
+                    parametro: "key",
+                });
+                state.solicitudes.activarFiltro("colSolicitante", {
+                    parametro: "solicitante_id",
+                    autocompletar: "{{baseUrl}}/filtros/solicitudes/solicitante",
+                });
+
+                state.solicitudes.activarOrden("colTipoSolicitud", {
+                    parametro: "tipo_solicitud",
+                });
+                state.solicitudes.activarFiltro("colTipoSolicitud", {
+                    parametro: "tipo_solicitud",
+                    select: "{{baseUrl}}/filtros/solicitudes/tipo",
+                });
+
+                state.solicitudes.activarOrden("colInstitucion", {
+                    parametro: "institucion",
+                });
+                state.solicitudes.activarFiltro("colInstitucion", {
+                    parametro: "institucion_id",
+                    autocompletar: "{{baseUrl}}/filtros/solicitudes/institucion",
+                });
+
+                state.solicitudes.activarOrden("colVinculoLey", {
+                    parametro: "vinculooley",
+                });
+                state.solicitudes.activarFiltro("colVinculoLey", {
+                    parametro: "vinculooley",
+                    select: "{{baseUrl}}/filtros/solicitudes/vinculooley",
+                });
+
+                state.solicitudes.activarOrden("colTieneInfo", {
+                    parametro: "tiene_info",
+                });
+                state.solicitudes.activarFiltro("colTieneInfo", {
+                    parametro: "tiene_info",
+                    select: "{{baseUrl}}/filtros/solicitudes/tiene_info",
+                });
+
+                state.solicitudes.activarOrden("colNumTramite", {
+                    parametro: "num_tramite",
+                });
+                state.solicitudes.activarFiltro("colNumTramite", {
+                    parametro: "num_tramite",
+                    select: "{{baseUrl}}/filtros/solicitudes/num_tramite",
+                });
+
+                state.solicitudes.activarOrden("colEstado", {
+                    parametro: "estado_id",
+                });
+                state.solicitudes.activarFiltro("colEstado", {
+                    parametro: "estado_id",
+                    select: "{{baseUrl}}/filtros/solicitudes/estado",
+                });
+
+                state.solicitudes.activarOrden("colAsignado", {
+                    parametro: "nombre_completo_up",
+                });
+                state.solicitudes.activarFiltro("colAsignado", {
+                    parametro: "personal_asignado_id",
+                    autocompletar: "{{baseUrl}}/filtros/solicitudes/asignado",
+                });
+
+                state.solicitudes.activarOrden("colFechaCreacion", {
+                    parametro: "fecha_creacion",
+                });
+
+                {% if APP_permisos["Solicitudes.Crear"] %}
+                state.solicitudes.agregarAccion({
+                    descripcion: 'Agregar Solicitud',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/solicitudes:nuevo",
+                            success: html => abrirDetalle(html, {
+                                onClose: () => {
+                                    state.solicitudes.recargar(); 
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %}
+
+            });
+
+            {% if APP_permisos["Solicitudes.Detalle"] %}
+            state.detalleSolicitudes = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/solicitudes/${id}`,
+                    success: html => abrirDetalle(html, {
+                        onClose: () => {
+                            // cerrarModal();
+                            state.solicitudes.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Solicitudes.Borrar"] %}
+            state.eliminarSolicitud = (id, solicitante) => {
+                // const nombreCompleto = `${nombre} ${apellido}`;
+                swal({
+                    title: `¿Está seguro que desea eliminar la solicitud de ${solicitante}?`,
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true,
+                })
+                .then((confirmacion) => {
+                    if (confirmacion) {
+                        $.ajax({
+                            url: `{{ baseUrl }}/api/solicitudes/${id}`,
+                            type: 'delete',
+                            success: response => {
+                                state.solicitudes.recargar();
+                                swal({
+                                    icon: "success",
+                                    text: "Se eliminó correctamente",
+                                    buttons:[false,'Aceptar']
+                                });
+                            },
+                            error: swalError
+                        });
+                    }
+                });
+            }
+            {% endif %}
+        };
+
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="solicitudes" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colIdSolicitante">ID</th>
+                            <th id="colSolicitante">SOLICITANTE</th>
+                            <th id="colTipoSolicitud">TIPO SOLICITUD</th>
+                            <th id="colInstitucion">INSTITUCIÓN</th>
+                            <th id="colVinculoLey">VÍNCULO ó LEY</th>
+                            <th id="colTieneInfo">TIENE INFO</th>
+                            <th id="colNumTramite">NÚM. TRÁMITE</th>
+                            <th id="colEstado">ESTADO</th>
+                            <th id="colAsignado">ASIGNADO</th>
+                            <th id="colFechaCreacion">FECHA CREACIÓN</th>
+                            {% if APP_permisos["Solicitudes.Borrar"] %}
+                                <th id="colEliminar"></th>
+                            {%endif%} 
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

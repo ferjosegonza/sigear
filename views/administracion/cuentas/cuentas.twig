@@ -1,0 +1,192 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+
+        .estado {
+            display: grid;
+            {% if APP_permisos["Cuentas.Editar"] %}
+            grid-template-columns: 4fr 1fr;
+            {% else %}
+            grid-template-columns: 1fr;
+            {% endif %}
+        }
+        .accion-desactivar {
+            color: orangered;
+        }
+        .accion-activar {
+            color: mediumseagreen;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.cuentas = null;
+
+            APP.ready(() => {
+                state.cuentas = $("#cuentas").DataTable({
+                    titulo: 'USUARIOS',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/cuentas",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Cuentas.Detalle"] %}onclick="APP.state.detalleCuenta(${item.cuenta_id})"{% endif %}`;
+                            let accionEstado = `{% if APP_permisos["Cuentas.Editar"] %}<div ${item.cuenta_status == 'A'?'title="Desactivar" class="accion-desactivar"':'title="Activar" class="accion-activar"'} onclick="APP.state.cambiarEstadoCuenta(${item.cuenta_id},'${item.cuenta_status == 'A'?'I':'A'}')"><i class="${item.cuenta_status == 'A'?'fas fa-times-circle':'fas fa-check-circle'}"></i></div>{% endif %}`;
+                            let accionRoles = `{% if APP_permisos["Cuentas.Roles"] %}onclick="APP.state.detalleCuentaRoles(${item.cuenta_id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Cuentas.Borrar"] %}onclick="APP.state.eliminarCuenta(${item.cuenta_id})"{% endif %}`;
+                            let apeYnom = '-';
+                            if(item.apellido)
+                                if(item.nombre)
+                                    apeYnom = item.apellido+', '+item.nombre;
+                                else
+                                    apeYnom = item.apellido;
+
+                            return [
+                                `<div ${accionDetalle}>${item.cuenta_key}</div>`,
+                                `<div ${accionDetalle}>${apeYnom}</div>`,
+                                `<div ${accionDetalle}>${item.email||''}</div>`,
+                                `<div class="estado"><div ${accionDetalle}><span ${item.cuenta_status == 'A'?'class="badge badge-success">Activo':'class="badge badge-danger">Inactivo'}</span></div> ${accionEstado}</div>`,
+                                {% if APP_permisos["Cuentas.Roles"] %}`<div ${accionRoles} title="Ver roles"><i class="fas fa-eye"></i></div>`{% endif %},
+                                {% if APP_permisos["Cuentas.Borrar"] %}`<div ${accionEliminar} title="Borrar Cuenta"><i class="fas fa-trash"></i></div>`{% endif %},
+                            ];
+
+                        }),
+                    }
+                });
+
+                state.cuentas.activarOrden("colNombre", {
+                    parametro: "cuenta_key",
+                });
+                /*  state.cuentas.agregarAccion({
+                    icono: 'fa fa-list-ol',
+                    descripcion: 'Listar Todos',
+                    accion: () => {
+                        if (state.cuentas.page.len() > 0)
+                            state.cuentas.page.len(-1)
+                        else
+                            state.cuentas.page.len(50)
+                        state.cuentas.ajax.reload()
+                    }
+                }); */
+
+                {% if APP_permisos["Cuentas.Crear"] %}
+                state.cuentas.agregarAccion({
+                    descripcion: 'Agregar Usuario',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/cuentas:nuevo",
+                            success: html => abrirModal(html, {
+                                onClose: () => {
+                                    state.cuentas.recargar();
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %}
+
+            });
+
+            {% if APP_permisos["Cuentas.Detalle"] %}
+            state.detalleCuenta = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/cuentas/${id}`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.cuentas.recargar();
+                        }
+                    })
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Cuentas.Roles"] %}
+            state.detalleCuentaRoles = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/cuentas/${id}/roles`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.cuentas.recargar();
+                        }
+                    })
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Cuentas.Editar"] %}
+            state.cambiarEstadoCuenta = (id, estado) => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/cuentas/${id}`,
+                    type: 'PUT',
+                    data: {
+                        status: estado
+                    },
+                    success: response => {
+                        state.cuentas.recargar();
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+            {% if APP_permisos["Cuentas.Borrar"] %}
+            state.eliminarCuenta = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/cuentas/${id}`,
+                    type: 'delete',
+                    success: response => {
+                        state.cuentas.recargar();
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        });
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+        };
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="cuentas" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colUsuario">USUARIO</th>
+                            <th id="colNombre">NOMBRE</th>
+                            <th id="colEmail">EMAIL</th>
+                            <th id="colEstado">ESTADO</th>
+                            {% if APP_permisos["Cuentas.Roles"] %}
+                            <th id="colRoles">ROLES</th>
+                            {% endif %}
+                            {% if APP_permisos["Cuentas.Borrar"] %}
+                            <th id="colEliminar"></th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        .mitad{
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+
+        }
+        .app-content-repo {
+            overflow-y: hidden!important;
+            width: 100%;
+            height: 75%;
+            margin: 0;
+            padding: 0;
+        }
+
+    </style>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.min.js"></script>
+
+    <script>
+
+        APP.state = new function () {
+            const state = this;
+            state.repositorioPlana = null;
+        state.DOM={
+            label:document.getElementById('labelEstructura'),
+        }
+
+        state.setFondo= (id, descripcion) =>{
+            state.estructuraFondoId =id;
+            document.getElementById('labelEstructura').innerText= 'Estructura seleccionada:' + descripcion;
+        }
+
+        const fondos = {{fondos ? (fondos | json_encode | raw) : 'null'}};
+
+
+        document.getElementById('fondo').addEventListener('input', e=> {
+            if (document.getElementById('fondo').value==1)
+                $.ajax({
+                            url: "{{ baseUrl }}/fondos/arbol",
+                            method: 'POST',
+                            success: html => abrirModal(html, {
+                        }),
+                        error: swalError
+                        });
+            else{
+                state.DOM.label.innerText='';
+                state.estructuraFondoId=null;
+            }
+        })
+
+
+    state.importarExcel=()=>{
+        let documento =document.getElementById('archivo');
+        let fondo = document.getElementById('fondo');
+
+
+        if(fondo.value ==''){
+            swal({
+                title: 'FONDO NO SELECCIONADO',
+                icon: 'warning',
+                buttons: [false, 'Aceptar']
+            });
+            return;
+        }
+
+        if (documento.files.length == 0){
+            swal({
+                title: 'ARCHIVO NO SELECCIONADO',
+                icon: 'warning',
+                buttons: [false, 'Aceptar']
+            });
+            return;
+        }
+
+        if ((document.getElementById('fondo').value==1) && (state.estructuraFondoId==null )){
+            swal({
+                title: 'DEBE SELECCIONAR UN DIRECTORIO DE LA ESTRUCTURA',
+                icon: 'warning',
+                buttons: [false, 'Aceptar']
+            });
+            return;
+        }
+        state.excelFileToJSON(document.getElementById('archivo').files[0]);
+
+    };
+
+
+    state.excelFileToJSON=(file)=>{
+
+        try {
+            var reader = new FileReader();
+            reader.readAsBinaryString(file);
+            reader.onload = function(e) {
+                var data = e.target.result;
+                var workbook = XLSX.read(data, {
+                        type : 'binary'
+                    });
+                var result = {};
+                workbook.SheetNames.forEach(function (sheetName) {
+                    var roa = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {defval:'-'});
+                    if (roa.length) result[sheetName] = roa;
+                });
+                let formData =new FormData();
+                formData.append('fondo',  document.getElementById('fondo').value);
+                formData.append('estructuraFondoId', state.estructuraFondoId);
+                console.log(state.estructuraFondoId);
+                formData.append('excel', JSON.stringify(result) );
+                formData.append('nombreArtchivo', file.name);
+
+                $.ajax({
+                    data: formData,
+                    processData: false,
+                    contentType :false,
+                    url: "{{ baseUrl }}/api/fondos/procesarExcel",
+                    method: 'POST',
+                    success: function (response) {
+                        state.repositorioPlana.recargar();
+                        $("#botonCargarBase").prop("disabled", false);
+                        $("#botonProcesar").prop("disabled", true);
+                        $("#idExcel").prop ("value", response.idExcel);
+                        swal({
+                            title: 'ARCHIVO procesado',
+                            text: 'Se importaron ' + response.cantidad + ' registros',
+                            icon: 'success',
+                            buttons: [false, 'Aceptar']
+                            }).then(value => {
+                                state.repositorioPlana.recargar();
+                            });
+                    },
+                    error: swalError
+                });
+            }
+        }catch(e){
+            console.error(e);
+        }
+    }
+
+    state.cargarEnBase = () => {
+        let idExcelValue = $("#idExcel").val();
+        if (/^\d+$/.test(idExcelValue))  {} else {idExcelValue = 0;}
+        $.ajax({
+            url: "{{ baseUrl }}/api/fondos/cargarEnBase/" + idExcelValue,
+            success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Cargado en Repositorio.",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            state.repositorioPlana.recargar();
+                            $("#botonProcesar").prop("disabled", false);
+                            $("#botonCargarBase").prop("disabled", true);
+                        });
+            },
+            error: swalError
+        });
+    };
+
+
+    APP.ready(() => {
+        state.repositorioPlana = $("#repositorioPlana").DataTable({
+                    titulo: 'DATOS A CARGAR',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/fondos/repositorioPlana",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            return [
+                                `<div>${item.repositorio_id}</div>`,
+                                `<div>${item.paginas}</div>`,
+                                `<div>${item.caja}</div>`,
+                                `<div>${item.numeracion_folio}</div>`,
+                                `<div>${item.apellido}</div>`,
+                                `<div>${item.fecha}</div>`,
+                                `<div>${item.seccion_mesa}</div>`,
+                                `<div>${item.legajo}</div>`,
+                                `<div>${item.observacion_archivista}</div>`,
+                                `<div>${item.asunto}</div>`, //causa
+                                `<div>${item.lugar}</div>`, //destino
+                                `<div>${item.foto}</div>`, //foto
+                                `<div>${item.observacion}</div>`,
+                                `<div>${item.fecha_extrema}</div>`,
+                                `<div>${item.cant_fojas}</div>`,
+                                `<div>${item.estado_conservacion_id}</div>`,
+                                `<div>${item.fecha_entrada}</div>`,
+                                `<div>${item.fecha_revicion}</div>`,
+                                `<div>${item.subserie_cabinet}</div>`
+
+                            ];
+                        }),
+                    },
+                    drawCallback: function(settings) {
+                        // Obtener la cantidad de registros
+                        var registros = this.api().rows().count();
+
+                        // Agregar la información de la cantidad de registros
+                        console.log("Cantidad de registros: " + registros);
+                        registros > 0 ? $("#botonCargarBase").prop("disabled", false) : $("#botonCargarBase").prop("disabled", true);
+                    }
+                });
+    });
+
+        };
+
+    document.getElementById('archivo');
+
+</script>
+{% endblock  %}
+
+
+{% block modalBody %}
+
+
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <input id="idExcel" value= '' type="hidden">
+            <div class="w-full mb-3" >
+                <label class="label">SELECCIONAR FONDO</label>
+                <select class="select select-bordered" id="fondo" name="fondo" placeholder="Seleccione una respuesta">
+                    <option value="" selected hidden>Seleccione...</option>
+                    {% for fondo in fondos %}
+                        <option value="{{fondo.fondo_id}}">{{fondo.fondo_nombre}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <label class="label" id="labelEstructura"></label>
+            <input type="file" name="archivo" id="archivo" accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            <button id="botonProcesar" class="btn btn-success" onclick="APP.state.importarExcel()">Procesar Excel</button>
+            <button id= "botonCargarBase" class="btn btn-success" onclick="APP.state.cargarEnBase()" disabled>Cargar en Base</button>
+        </div>
+    </div>
+    <div class="app-content-repo">
+        <table id="repositorioPlana" class="table table-hover table-text-center">
+            <thead>
+                <tr>
+                    <th id="colId">NRO</th>
+                    <th id="ColPagina">PAGINA</th>
+                    <th id="colCaja">CAJA</th>
+                    <th id="colFolio">NRO_FOLIO</th>
+                    <th id="ColApellido">APELLIDO Y NOMBRE</th>
+                    <th id="colFecha_ing">FECHA_INGRESO</th>
+                    <th id="colProcedencia">SECCION/MESA</th>
+                    <th id="colProcedencia">LEGAJO</th>
+                    <th id="colObservacionArchivista">OBSERVACION ARCHIVISTA</th>
+                    <th id="colAsunto">ASUNTO</th>
+                    <th id="colLugar">LUGAR</th>
+                    <th id="colFoto">FOTO</th>
+                    <th id="colObservacion">OBSERVACION</th>
+                    <th id="colFechaExtrema">FECHA_EXTREMA</th>
+                    <th id="colCantFojas">CANT. FOJAS</th>
+                    <th id="colEstado">ESTADO</th>
+                    <th id="colFechaEntrada">ENTRADA</th>
+                    <th id="colFechaRevision">REVISION</th>
+                    <th id="colCabinet">CABINET</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock %}

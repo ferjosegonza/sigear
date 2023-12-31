@@ -1,0 +1,130 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.instituciones = null;
+
+            APP.ready(() => {
+                state.instituciones = $("#instituciones").DataTable({
+                    titulo: 'INSTITUCIONES',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/instituciones",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Instituciones.Detalle"] %}onclick="APP.state.detalleInstituciones(${item.institucion_id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Instituciones.Borrar"] %}onclick="APP.state.eliminarInstituciones(${item.institucion_id}, '${item.descripcion}')"{% endif %}`;
+
+                            return [
+                                `<div ${accionDetalle}>${item.institucion_id}</div>`,
+                                `<div ${accionDetalle}>${item.descripcion}</div>`,
+                                `<div ${accionDetalle}>${item.ins_fecha}</div>`,
+                                {% if APP_permisos["Instituciones.Borrar"] %}`<div ${accionEliminar} title="Borrar Institución"><i class="fas fa-trash"></i></div>`{% endif %},
+
+                                ];
+                            }),
+                    }
+                });
+
+            
+                {% if APP_permisos["Instituciones.Crear"] %}
+                state.instituciones.agregarAccion({
+                    descripcion: 'Agregar Institución',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/instituciones:nuevo",
+                            success: html => abrirModal(html, {
+                                onClose: () => {
+                                    state.instituciones.recargar(); 
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %} 
+
+            });
+
+            {% if APP_permisos["Instituciones.Detalle"] %}
+            state.detalleInstituciones = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/instituciones/${id}`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.instituciones.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+            
+            {% if APP_permisos["Instituciones.Borrar"] %}
+            state.eliminarInstituciones = (id, descripcion) => {
+                swal({
+                    title: `¿Está seguro que desea eliminar a ${descripcion}?`,
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true,
+                })
+                .then((confirmacion) => {
+                    if (confirmacion) {
+                        $.ajax({
+                            url: `{{ baseUrl }}/api/instituciones/${id}`,
+                            type: 'delete',
+                            success: response => {
+                                state.instituciones.recargar();
+                                swal({
+                                    icon: "success",
+                                    text: "Se eliminó correctamente",
+                                    buttons:[false,'Aceptar']
+                                });
+                            },
+                            error: swalError
+                        });
+                    }
+                });
+            }
+            {% endif %}
+        };
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="instituciones" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colInstitucion_id">ID</th> 
+                            <th id="colDescripcion">DESCRIPCIÓN</th>
+                            <th id="colFecha">FECHA DE CREACIÓN</th>
+                            {% if APP_permisos["Instituciones.Borrar"] %}
+                                <th id="colEliminar"></th>
+                            {%endif%} 
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+       </div>
+{% endblock %}

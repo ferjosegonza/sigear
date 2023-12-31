@@ -1,0 +1,132 @@
+{% extends "extends/base.twig" %}
+
+{% block style %}
+    <style>
+        .app-content {
+            overflow-y: hidden!important;
+        }
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            state.permisos = null;
+
+            APP.ready(() => {
+                state.permisos = $("#permisos").DataTable({
+                    titulo: 'PERMISOS',
+                    searching: true,
+                    responsive: true,
+                    fixedHeader: true,
+                    ordenes: {},
+                    ajax: {
+                        url: "{{baseUrl}}/api/permisos",
+                        type: "GET",
+                        dataSrc: json => json.data.map(item => {
+                            let accionDetalle = `{% if APP_permisos["Permisos.Detalle"] %}onclick="APP.state.detallePermiso(${item.id})"{% endif %}`;
+                            let accionEliminar = `{% if APP_permisos["Permisos.Borrar"] %}onclick="APP.state.eliminarPermiso(${item.id})"{% endif %}`;
+                            return [
+                                `<div ${accionDetalle}>${item.key}</div>`,
+                                `<div ${accionDetalle}>${item.descripcion || '-'}</div>`,
+                                `<div ${accionDetalle}>${item.create_time ? moment(item.create_time).format('D/M/Y H:m:s'):'-'}</div>`,
+                                `<div ${accionDetalle}>${item.update_time ? moment(item.update_time).format('D/M/Y H:m:s'):'-'}</div>`,
+                                {% if APP_permisos["Permisos.Borrar"] %}`<div ${accionEliminar} title="Borrar Permiso"><i class="fas fa-trash"></i></div>`{% endif %},
+                            ];
+                        }),
+                    }
+                });
+
+                state.permisos.activarOrden("colNombre", {
+                    parametro: "key",
+                });
+                /*  state.permisos.agregarAccion({
+                    icono: 'fa fa-list-ol',
+                    descripcion: 'Listar Todos',
+                    accion: () => {
+                        if (state.permisos.page.len() > 0)
+                            state.permisos.page.len(-1)
+                        else
+                            state.permisos.page.len(50)
+                        state.permisos.ajax.reload()
+                    }
+                }); */
+
+                {% if APP_permisos["Permisos.Crear"] %}
+                state.permisos.agregarAccion({
+                    descripcion: 'Agregar Permiso',
+                    icono: 'fas fa-plus',
+                    accion: () => {
+                        $.ajax({
+                            url: "{{ baseUrl }}/permisos:nuevo",
+                            success: html => abrirModal(html, {
+                                onClose: () => {
+                                    state.permisos.recargar();
+                                }
+                            }),
+                            error: swalError
+                        });
+                    }
+                });
+                {% endif %}
+
+            });
+
+            {% if APP_permisos["Permisos.Detalle"] %}
+            state.detallePermiso = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/permisos/${id}`,
+                    success: html => abrirModal(html, {
+                        onClose: () => {
+                            state.permisos.recargar();
+                        }
+                    }),
+                    error: swalError
+                });
+            }
+            {% endif %}
+            {% if APP_permisos["Permisos.Borrar"] %}
+            state.eliminarPermiso = id => {
+                $.ajax({
+                    url: `{{ baseUrl }}/api/permisos/${id}`,
+                    type: 'delete',
+                    success: response => {
+                        state.permisos.recargar();
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        });
+                    },
+                    error: swalError
+                });
+            }
+            {% endif %}
+
+        };
+    </script>
+{% endblock %}
+
+{% block appBody %}
+    <div class="app-layout with-padding">
+        <div class="layout__body">
+            <div class="app-content">
+                <table id="permisos" class="table table-hover table-text-center">
+                    <thead>
+                        <tr>
+                            <th id="colNombre">NOMBRE</th>
+                            <th id="colDescripcion">DESCRIPCION</th>
+                            <th id="colCreate_time">CREACION</th>
+                            <th id="colUpdate_time">MODIFICACION</th>
+                            {% if APP_permisos["Permisos.Borrar"] %}<th id="colEliminar"></th>{%endif%}
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

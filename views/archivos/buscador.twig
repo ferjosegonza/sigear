@@ -1,0 +1,474 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+        #columns {
+            display: grid;
+            grid-template-columns: 0.4fr 1fr;
+            height: 100%;
+            overflow: hidden;
+            column-gap: 20px;
+            padding: 20px;
+        }
+
+        #columns > aside {
+            background: #f3f3f3;
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        .header-archivos{
+            padding: 20px;
+            margin-bottom:10px;
+        }
+
+        #tiffPreview{
+            overflow: scroll;
+            height: 100vh;
+        }
+
+        #tiffPreview > li {
+            position: relative;
+            margin-bottom:20px;
+        }
+
+         #tiffPreview > li > button {
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            font-size: 20px !important;
+        }
+
+        .lds-dual-ring {
+            display: inline-block;
+            width: 80px;
+            height: 80px;
+            position: absolute;
+            top:50%;
+            left:62%;
+        }
+        .lds-dual-ring:after {
+            content: " ";
+            display: block;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #444;
+            border-color: #444 transparent #444 transparent;
+            animation: lds-dual-ring 1.2s linear infinite;
+        }
+        @keyframes lds-dual-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        :popover-open {
+            width: 400px;
+            height: 300px;
+            padding: 15px 15px;
+            border-radius: 10px;
+            border: solid 2px #bbb;
+            z-index: 9999;
+        }
+
+        #mypopover h4 {
+            margin-bottom: 10px;
+        }
+
+        ::backdrop {
+            backdrop-filter: blur(3px);
+        }
+
+        #paginadorTiff {
+            position: absolute;
+            top: -1px;
+            left: 0;
+        }
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script src="/js/tiff.min.js"></script>
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+        }
+
+        verTiff = (repositorioID, pagina, total_paginas) => {
+            $('#tiffPreview').html('<div id="loading" class="lds-dual-ring"></div>');
+            Tiff.initialize({TOTAL_MEMORY: 16777216 * 10});
+            var xhr = new XMLHttpRequest();
+            var url = "{{ baseUrl }}/api/archivos/tiff/"+repositorioID;
+            var params = "total_paginas="+total_paginas+"&pagina="+pagina;
+            xhr.open('GET', url+"?"+params, true);
+
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function (e) {
+                var buffer = xhr.response;
+                var tiff = new Tiff({buffer: buffer});
+                for (var i = 0, len = tiff.countDirectory(); i < len; ++i) {
+                    tiff.setDirectory(i);
+                    var canvas = tiff.toCanvas();
+                    var img  = canvas.toDataURL("image/jpeg");
+                    canvas.id = i
+                    
+                    $('#tiffPreview').append(`<li id="img-${i}" class="list-group-item d-flex justify-content-between align-items-center">
+                                            ${paginadorTiffs(repositorioID, pagina, total_paginas)}
+                                            <img id="image-${i}" src="${img}"/>
+                                            <button onclick="document.getElementById('imageID').value = ${i}" popovertarget="mypopover" title="Agregar al Informe" class="btn btn-success"><i class="fas fa-save"></i> &nbsp; AGREGAR</button>
+                                        </li>`
+                    );
+
+                    document.getElementById('repositorioID').value = repositorioID
+
+                    var liActive = document.querySelector('#repos-list > li.active');
+                    if(liActive){
+                        liActive.classList.remove('active');
+                    }
+                    var newActive = document.getElementById('repo-'+repositorioID+'-'+pagina);
+                    if(newActive){
+                        newActive.classList.add('active');
+                    }
+
+
+                }
+            };
+            xhr.send();
+        } 
+
+        paginadorTiffs = (repositorioID, pagina, total_paginas) => {
+            
+            //prev
+            if(pagina == 1){
+                var disablePrev = 'disabled';
+                var actionPrev = '';
+            } else {
+                var disablePrev = '';
+                var actionPrev = `verTiff(${repositorioID}, ${pagina-1}, ${total_paginas});`;
+            }
+
+            //next
+            if(pagina == total_paginas){
+                var disableNext = 'disabled';
+                var actionNext = '';
+            } else {
+                var disableNext = '';
+                var actionNext = `verTiff(${repositorioID}, ${pagina+1}, ${total_paginas});`;
+            }
+            
+            
+            return `<nav id="paginadorTiff">
+                        <ul class="pagination">
+                            <li class="page-item ${disablePrev}" onclick="${actionPrev}">
+                                <span class="page-link">Anterior</span>
+                            </li>
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    ${pagina} de ${total_paginas}
+                                    <span class="sr-only">(current)</span>
+                                </span>
+                            </li>
+                            <li class="page-item ${disableNext}" onclick="${actionNext}">
+                                <a class="page-link" href="#">Siguiente</a>
+                            </li>
+                        </ul>
+                    </nav>`;
+        }
+
+        limpiarForm= () => {
+            document.getElementById('search').value = '';
+            document.getElementById('ocr').value = '';
+            document.getElementById('id_fondo').value = '';
+            document.getElementById('fondo').value = '';
+            document.getElementById('id_nodo').value = '';
+            document.getElementById('nodo').value = '';
+            document.getElementById('apellido').value = '';
+            document.getElementById('legajo').value = '';
+            document.getElementById('seccion').value = '';
+            
+            document.getElementById('repos-list').innerHTML = "";
+            document.getElementById('tiffPreview').innerHTML = "";
+    
+        }
+
+        buscarRepositorio = () => {
+            var filtros = {};
+            
+            // asunto
+            var search = document.getElementById('search').value;
+            if(search){
+                filtros.buscador = search;
+            }
+
+            // set filtros OCR
+            var ocr = document.getElementById('ocr').value;
+            if(ocr){
+                filtros.ocr = ocr
+            }
+            // filtro fondo
+            var id_fondo = document.getElementById('id_fondo').value;
+            var fondo = document.getElementById('fondo').value;
+            if(fondo && id_fondo){
+                filtros.id_fondo = id_fondo
+            }
+
+            // filtro nodo
+            var id_nodo = document.getElementById('id_nodo').value;
+            var nodo = document.getElementById('nodo').value;
+            if(nodo && id_nodo){
+                filtros.id_nodo = id_nodo
+            }
+
+            // filtro apellido
+            var apellido = document.getElementById('apellido').value;
+            if(apellido){
+                filtros.apellido = apellido
+            }
+
+            // filtro legajo
+            var legajo = document.getElementById('legajo').value;
+            if(legajo){
+                filtros.legajo = legajo
+            }
+
+            // filtro seccion
+            var seccion = document.getElementById('seccion').value;
+            if(seccion){
+                filtros.seccion = seccion
+            }
+            
+            // VALIDA AL MENOS UN CAMPO DE BUSQUEDA
+            if(Object.keys(filtros).length === 0){
+                swal({
+                    icon: "warning",
+                    text: "Debe completar al menos un campo",
+                    buttons:[false,'Aceptar']
+                });
+                return;
+            }
+
+            $.ajax({
+                url: "{{ baseUrl }}/api/archivos/buscar",
+                type: 'GET',
+                data: {filtros},
+                success: json => {
+                    var repoList = document.getElementById('repos-list');
+                    repoList.innerHTML = "";
+                    var liHtml = ``;
+                    if(json.data.length > 0){
+                        json.data.forEach(function(item){
+                            var pagina = item.tiff_pagina ? item.tiff_pagina : 1;
+                            liHtml += `<li id="repo-${item.repositorio_id}-${pagina}" class="list-group-item d-flex justify-content-between align-items-center">
+                                            ${item.asunto} - Página ${pagina}
+                                            <i class="fas fa-eye" title="Ver" onclick="verTiff(${item.repositorio_id}, ${pagina}, ${item.paginas})"></i>
+                                        </li>`;
+                         });
+                    
+                    } else {
+                        liHtml += `<li id="repo-empty" class="list-group-item d-flex justify-content-between align-items-center">
+                                        
+                                            No hay Archivos cargados con esos parametros
+                                      
+                                    </li>`;
+                    }
+                    repoList.innerHTML = liHtml;  
+                    
+                    filtros = {};
+                },
+                error: swalError
+            });
+        }
+
+        function agregarImagen(){
+            var imageID = document.getElementById('imageID').value;
+            var repositorioID = document.getElementById('repositorioID').value;
+            var search_nombre = document.getElementById('search_nombre').value;
+            var imgTag = document.getElementById('image-'+imageID);
+            var image = imgTag.src;
+            var base64ImageContent = image.replace(/^data:image\/(png|jpeg);base64,/, "");
+            var blob = base64ToBlob(base64ImageContent, 'image/jpg');                
+            var formData = new FormData();
+            formData.append('imagen', blob);
+            formData.append('informeID', '{{informeID}}');
+            formData.append('repositorioID', repositorioID);
+            formData.append('nombre', search_nombre);
+
+            document.getElementById('mypopover').hidePopover();
+
+            $.ajax({
+                url: "{{ baseUrl }}/api/archivos/agregar",
+                type: 'POST',
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: formData,
+                success: json => {
+                    swal({
+                        icon: "success",
+                        text: "IMAGEN AGREGADA AL INFORME",
+                        buttons:[false,'Aceptar']
+                    });
+                },
+                error: swalError
+            });
+        }
+
+        function base64ToBlob(base64, mime){
+            mime = mime || '';
+            var sliceSize = 1024;
+            var byteChars = window.atob(base64);
+            var byteArrays = [];
+
+            for (var offset = 0, len = byteChars.length; offset < len; offset += sliceSize) {
+                var slice = byteChars.slice(offset, offset + sliceSize);
+
+                var byteNumbers = new Array(slice.length);
+                for (var i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+
+                var byteArray = new Uint8Array(byteNumbers);
+
+                byteArrays.push(byteArray);
+            }
+
+            return new Blob(byteArrays, {type: mime});
+        }
+        document.getElementById('buscadorForm').addEventListener('submit', function(event){
+            buscarRepositorio();
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
+        $('#fondo').autocomplete({
+            autoFocus: true,
+            minLength: 2,
+            source: function (request, response) {
+                $.get({
+                    url:`{{baseUrl}}/filtros/fondos/fondoNombre`,
+                    dataType: 'json',
+                    data: { descripcion: $('#fondo').val()},
+                    success: response
+                });
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $('#id_fondo').val(ui.item.id);
+                $('#fondo').val(ui.item.value).removeClass('ui-autocomplete-loading');
+            }
+        });
+
+        $('#nodo').autocomplete({
+            autoFocus: true,
+            minLength: 2,
+            source: function (request, response) {
+                $.get({
+                    url:`{{baseUrl}}/filtros/fondos/nodoArbol`,
+                    dataType: 'json',
+                    data: { descripcion: $('#nodo').val()},
+                    success: response
+                });
+            },
+            select: function (event, ui) {
+                event.preventDefault();
+                $('#id_nodo').val(ui.item.id);
+                $('#nodo').val(ui.item.value).removeClass('ui-autocomplete-loading');
+            }
+        });
+
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    
+{% endblock %}
+
+{% block modalBody %}
+    <div id="columns">
+        <aside>
+            <div id="informes-layer">
+                <div class="header-archivos" novalidate>
+                    <form id="buscadorForm"> 
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="search" name="search" placeholder="Asunto" aria-label="Asunto" style="height:auto;" aria-describedby="basic-addon2">
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="fondo" name="fondo" placeholder="Fondo" aria-label="Fondo" style="height:auto;" aria-describedby="basic-addon2">
+                            <input type="hidden" class="form-control" id="id_fondo" name="id_fondo">
+                        </div>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="nodo" name="nodo" placeholder="Nodo" aria-label="Nodo" style="height:auto;" aria-describedby="basic-addon2">
+                            <input type="hidden" class="form-control" id="id_nodo" name="id_nodo">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="apellido" name="apellido" placeholder="Nombre y Apellido" aria-label="Apellido" style="height:auto;" aria-describedby="basic-addon2">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <input type="number" class="form-control" id="legajo" name="legajo" placeholder="Legajo" aria-label="Legajo" style="height:auto;" aria-describedby="basic-addon2">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="seccion" name="seccion" placeholder="Sección/Mesa" aria-label="Sección/Mesa" style="height:auto;" aria-describedby="basic-addon2">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="ocr" name="ocr" placeholder="OCR" aria-label="OCR" style="height:auto;" aria-describedby="basic-addon2">
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <div class="input-group-append">
+                                <span class="btn btn-success" onclick="buscarRepositorio();"><i class="fas fa-search"></i> BUSCAR </span>
+                                <span class="btn btn-warning" onclick="limpiarForm();"><i class="fas fa-broom"></i> LIMPIAR </span>  
+                            </div>
+                        </div>    
+                    </form>
+                </div>
+                <ul id="repos-list" class="list-group list-group-flush">
+                    
+                </ul>
+            </div>    
+        </aside>
+        
+        <div class="info">
+            <ul id="tiffPreview" style="background-image: url("/public/image/lo");">
+                
+            </ul>
+
+             <div id="mypopover" popover>
+                <h4>FORMULARIO IMAGEN</h4>
+                <p>
+                    <form id="buscadorForm" novalidate> 
+                        <input type="hidden" class="form-control" id="imageID" name="imageID" placeholder="Buscar" aria-label="Buscar" style="height:auto;" aria-describedby="basic-addon2">
+                        <input type="hidden" class="form-control" id="repositorioID" name="repositorioID" placeholder="Buscar" aria-label="Buscar" style="height:auto;" aria-describedby="basic-addon2">
+                        <div class="form-group">
+                            <label>
+                                <span class="label-text">NOMBRE</span>
+                            </label>
+                            <input type="text" class="form-control" id="search_nombre" name="search_nombre" placeholder="" aria-label="" style="height:auto;" aria-describedby="basic-addon2">
+                        </div>
+                    </form>
+                    <button type="button" class="btn btn-success" onclick="agregarImagen()">GUARDAR</button>
+                </p>
+            </div>  
+
+        </div>
+    </div>
+        
+
+{% endblock %}
+{% block modalFooter %}
+    
+{% endblock %}
+

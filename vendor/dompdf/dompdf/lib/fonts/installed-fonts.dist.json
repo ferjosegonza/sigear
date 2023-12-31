@@ -1,0 +1,104 @@
+{
+    "sans-serif": {
+        "normal": "Helvetica",
+        "bold": "Helvetica-Bold",
+        "italic": "Helvetica-Oblique",
+        "bold_italic": "Helvetica-BoldOblique"
+    },
+    "times": {
+        "normal": "Times-Roman",
+        "bold": "Times-Bold",
+        "italic": "Times-Italic",
+        "bold_italic": "Times-BoldItalic"
+    },
+    "times-roman": {
+        "normal": "Times-Roman",
+        "bold": "Times-Bold",
+        "italic": "Times-Italic",
+        "bold_italic": "Times-BoldItalic"
+    },
+    "courier": {
+        "normal": "Courier",
+        "bold": "Courier-Bold",
+        "italic": "Courier-Oblique",
+        "bold_italic": "Courier-BoldOblique"
+    },
+    "helvetica": {
+        "normal": "Helvetica",
+        "bold": "Helvetica-Bold",
+        "italic": "Helvetica-Oblique",
+        "bold_italic": "Helvetica-BoldOblique"
+    },
+    "zapfdingbats": {
+        "normal": "ZapfDingbats",
+        "bold": "ZapfDingbats",
+        "italic": "ZapfDingbats",
+        "bold_italic": "ZapfDingbats"
+    },
+    "symbol": {
+        "normal": "Symbol",
+        "bold": "Symbol",
+        "italic": "Symbol",
+        "bold_italic": "Symbol"
+    },
+    "serif": {
+        "normal": "Times-Roman",
+        "bold": "Times-Bold",
+        "italic": "Times-Italic",
+        "bold_italic": "Times-BoldItalic"
+    },
+    "monospace": {
+        "normal": "Courier",
+        "bold": "Courier-Bold",
+        "italic": "Courier-Oblique",
+        "bold_italic": "Courier-BoldOblique"
+    },
+    "fixed": {
+        "normal": "Courier",
+        "bold": "Courier-Bold",
+        "italic": "Courier-Oblique",
+        "bold_italic": "Courier-BoldOblique"
+    },
+    "dejavu sans": {
+        "bold": "DejaVuSans-Bold",
+        "bold_italic": "DejaVuSans-BoldOblique",
+        "italic": "DejaVuSans-Oblique",
+        "normal": "DejaVuSans"
+    },
+    "dejavu sans mono": {
+        "bold": "DejaVuSansMono-Bold",
+        "bold_italic": "DejaVuSansMono-BoldOblique",
+        "italic": "DejaVuSansMono-Oblique",
+        "normal": "DejaVuSansMono"
+    },
+    "dejavu serif": {
+        "bold": "DejaVuSerif-Bold",
+        "bold_italic": "DejaVuSerif-BoldItalic",
+        "italic": "DejaVuSerif-Italic",
+        "normal": "DejaVuSerif"
+    },
+    "lato black": {
+        "normal": "lato-v23-latin-900",
+        "bold": "lato-v23-latin-900",
+        "italic": "lato-v23-latin-900italic",
+        "bold_italic": "lato-v23-latin-900"
+    },
+    "lato": {
+        "normal": "lato-v23-latin-regular",
+        "bold": "lato-v23-latin-700",
+        "italic": "lato-v23-latin-italic",
+        "bold_italic": "lato-v23-latin-700italic"
+    },
+    "lato light": {
+        "normal": "lato-v23-latin-300",
+        "bold": "lato-v23-latin-300",
+        "italic": "lato-v23-latin-300italic",
+        "bold_italic": "lato-v23-latin-300"
+    },
+    "lato hairline": {
+        "normal": "lato-v23-latin-100",
+        "bold": "lato-v23-latin-100",
+        "italic": "lato-v23-latin-100italic",
+        "bold_italic": "lato-v23-latin-100"
+    }
+}

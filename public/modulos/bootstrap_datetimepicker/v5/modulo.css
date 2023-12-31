@@ -1,0 +1,64 @@
+/* DATETIME PICKER */
+.datetimepickers-selector .bootstrap-datetimepicker-widget table td.active, .bootstrap-datetimepicker-widget table td.active:hover {
+    background-color: #e56b6b;
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget table thead tr:first-child th:hover {
+    color: #e56b6b;
+    background: #f5f5f5;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget.dropdown-menu.usetwentyfour.timepicker-sbs.bottom {
+    box-shadow: 4px 6px 11px 0px rgb(183, 183, 183);
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget.dropdown-menu.bottom:after {
+    border-bottom: 6px solid #6caae4;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget.dropdown-menu.usetwentyfour.timepicker-sbs.bottom {
+    padding: 0px;
+}
+.datetimepickers-selector span.timepicker-hour {
+    font-size: 61px !important;
+    color: #bfbfbf;
+}
+.datetimepickers-selector .timepicker-minute {
+    font-size: 61px !important;
+    color: #bfbfbf;
+}
+.datetimepickers-selector  .timepicker {
+    padding: 0 35px;
+    margin-left: -20px;
+}
+.datetimepickers-selector  th.picker-switch {
+    padding: 11px 0 !important;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget.dropdown-menu.usetwentyfour.bottom {
+    width: 500px;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget.dropdown-menu.usetwentyfour.bottom {
+    padding: 0;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget table td span:hover {
+    background: #bfbfbf;
+}
+.datetimepickers-selector span.timepicker-hour:hover {
+    background: #fff !important;
+    color: #9a9a9a;
+}
+.datetimepickers-selector span.timepicker-minute:hover {
+    background: #fff !important;
+    color: #9a9a9a;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget {
+    width: 300px !important;
+    background-color: #ffffff;
+}
+.datetimepickers-selector .bootstrap-datetimepicker-widget table td, .bootstrap-datetimepicker-widget table th {
+    border-radius: 0px;
+}
+
+.bootstrap-datetimepicker-widget.dropdown-menu {
+    width: 24rem;
+}
+
+/* FIN DATETIME PICKER */

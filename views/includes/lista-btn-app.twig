@@ -1,0 +1,31 @@
+<div class="lista-btn-app">
+    {% if apps %}
+        {% set init_btn_groups = true %}
+        {% for app in apps %}
+            {% if app.grupo %}
+                {% if init_btn_groups %}
+                    <div class="btn-app-group-section"></div>
+                    {% set init_btn_groups = false %}
+                {% endif %}
+                <div class="btn-app-group">
+                    <div class="btn-app-group-desc">{{app.descripcion}}</div>
+                    <div class="lista-btn-app">
+                        {% for grupo in app.grupo %}
+                            <a class="btn-app" {% if grupo.url %}href="{{ grupo.url }}"{% else %}onclick="{{grupo.onClick}}"{% endif %}>
+                                <img class="btn-app__logo" src="{% if grupo.icono %}{{ grupo.icono }}{% else %}{{ grupo.icon }}{% endif %}">
+                                <div class="btn-app__desc">{% if grupo.nombre %}{{ grupo.nombre }}{% else %}{{ grupo.name }}{% endif %}</div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <a class="btn-app" {% if app.url %}href="{{ app.url }}"{% else %}onclick="{{app.onClick}}"{% endif %}>
+                    <img class="btn-app__logo" src="{% if app.icono %}{{ app.icono }}{% else %}{{ app.icon }}{% endif %}">
+                    <div class="btn-app__desc">{% if app.nombre %}{{ app.nombre }}{% else %}{{ app.name }}{% endif %}</div>
+                </a>
+            {% endif %}
+        {% endfor %}
+    {% else  %}
+        <div class="lista-btn-app__empty">No hay secciones disponibles</div>
+    {% endif %}
+</div>

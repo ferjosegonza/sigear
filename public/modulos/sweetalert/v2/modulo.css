@@ -1,0 +1,19 @@
+.swal-title, .swal-footer, .swal-text{
+    text-transform:uppercase !important;
+}
+.swal-overlay {
+    z-index: 200000;
+}
+.swal-overlay .swal-modal {
+    z-index: 200001;
+}
+.swal__html__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.swal-title:last-child {
+    padding-bottom: 20px !important;
+}

@@ -1,0 +1,119 @@
+{% extends "extends/modal.twig"%}
+
+{% block style %}
+    <style>
+
+    </style>
+{% endblock %}
+
+{% block script %}
+    <script>
+        APP.showLoader();
+
+        APP.state = new function () {
+            const state = this;
+
+            const solicitante = {{solicitante ? (solicitante | json_encode | raw) : 'null'}};
+         /*   const tipo_solicitantes = {{tipo_solicitantes ? (tipo_solicitantes | json_encode | raw) : 'null'}};*/
+
+            function validarNumerico(value) {
+                return /^[0-9]+$/.test(value);
+            }
+
+            state.SCHEMA_SOLICITANTE = yup.object().shape({
+                nombre: yup.string().required("Debe ingresar un Nombre.").max(60).label('Nombre'),
+                apellido: yup.string().required("Debe ingresar un Apellido.").max(60).label('Apellido'),
+                documento: yup.string().required("Debe ingresar un DNI sin puntos.").max(8).label('DNI').test('numeric', "Debe ingresar sólo números.", function (value) {
+                    return validarNumerico(value);
+                }),
+                telefono: yup.string().required("Debe ingresar un teléfono.").max(10).test('numeric', "Debe ingresar sólo números.", function (value) {
+                    return validarNumerico(value);
+                }),
+                email: yup.string().required("Debe ingresar un Email.").max(60).label('Email').test('email', "Debe ingresar un correo electrónico válido.", function (value) {
+                    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    return EMAIL_REGEX.test(value);
+                }),
+              /*  tipo_solicitante: yup.string().required("Debe seleccionar una opción.").label('Tipo de Solicitante')*/
+            });
+
+            const guardarSolicitante = formData => {
+                console.log('entra al guardar');
+                {% if solicitante is empty or APP_permisos["Solicitante.Editar"] %}
+                $.ajax({
+                    url: `{{baseUrl}}/api/solicitantes{% if solicitante %}/{{solicitante.solicitante_id}}{% endif %}`,
+                    type: {% if solicitante %}'PUT'{% else %}'POST'{% endif %},
+                    data: formData.data,
+                    success: json => {
+                        swal({
+                            icon: "success",
+                            text: "Se guardó correctamente",
+                            buttons:[false,'Aceptar']
+                        }).then(value => {
+                            cerrarModal();
+                        });
+                    },
+                    error: swalError
+                });
+                {% endif %}
+            }
+
+            document.getElementById("formsolicitantes").addEventListener('submit', e=>{
+                validarFormularioConYup({event: e, schema: APP.state.SCHEMA_SOLICITANTE, onValidate: guardarSolicitante, onError: console.dir})});
+
+        }
+    </script>
+{% endblock  %}
+
+{% block modalHeader %}
+    <div class="modal-header">
+        <div class="title" style="">{{modalTitle}}</div>
+        <div class="actions">
+            <button onclick="cerrarModal();" title="Cancelar"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block modalBody %}
+    <div class="modal-body sw-main">
+        <div class="app-content">
+            <form id="formsolicitantes" novalidate>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Nombre</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="nombre" autocomplete="off" value="{{solicitante.nombres}}" required>
+                </div>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Apellido</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="apellido" autocomplete="off" value="{{solicitante.apellidos}}" required>
+                </div>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">DNI</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="documento" autocomplete="off" value="{{solicitante.documento}}" required>
+                </div>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Teléfono</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="telefono" autocomplete="off" value="{{solicitante.telefono}}" required>
+                </div>
+                <div class="w-full mb-3">
+                    <label class="label">
+                        <span class="label-text">Email</span>
+                    </label>
+                    <input type="text" class="input input-bordered w-full" name="email" autocomplete="off" value="{{solicitante.email}}" required>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+{% block modalFooter %}
+    {% if solicitante is empty or APP_permisos["Solicitante.Editar"] %}
+    <button class="btn btn-success" form="formsolicitantes" type="submit" title="Guardar Solicitante">GUARDAR</button>
+    {% endif %}
+{% endblock %}
